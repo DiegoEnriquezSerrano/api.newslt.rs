@@ -1,7 +1,7 @@
 use crate::session_state::TypedSession;
 use crate::utils::{e500, see_other};
-use actix_web::http::header::ContentType;
 use actix_web::HttpResponse;
+use actix_web::http::header::ContentType;
 use actix_web_flash_messages::IncomingFlashMessages;
 use std::fmt::Write;
 

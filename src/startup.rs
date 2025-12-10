@@ -5,18 +5,18 @@ use crate::routes::{
     admin_dashboard, change_password, change_password_form, confirm, health_check, home, log_out,
     login, login_form, publish_newsletter, publish_newsletter_form, subscribe,
 };
-use actix_session::storage::RedisSessionStore;
 use actix_session::SessionMiddleware;
+use actix_session::storage::RedisSessionStore;
 use actix_web::cookie::Key;
 use actix_web::dev::Server;
 use actix_web::middleware::from_fn;
 use actix_web::web::Data;
-use actix_web::{web, App, HttpServer};
-use actix_web_flash_messages::storage::CookieMessageStore;
+use actix_web::{App, HttpServer, web};
 use actix_web_flash_messages::FlashMessagesFramework;
+use actix_web_flash_messages::storage::CookieMessageStore;
 use secrecy::{ExposeSecret, Secret};
-use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
+use sqlx::postgres::PgPoolOptions;
 use std::net::TcpListener;
 use tracing_actix_web::TracingLogger;
 

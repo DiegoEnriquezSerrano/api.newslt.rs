@@ -1,0 +1,31 @@
+services:
+  newsletter-db:
+    image: postgres:17-alpine
+    env_file: .env
+    expose:
+      - 5432
+    networks:
+      - newsletter-net
+    ports:
+      - 5432:5432
+    volumes:
+      - newsletter-db:/var/lib/postgresql/data
+  newsletter-valkey:
+    command: valkey-server --save 60 1 --loglevel debug
+    image: valkey/valkey:8.0-alpine
+    env_file: .env
+    expose:
+      - 6379
+    networks:
+      - newsletter-net
+    ports:
+      - 6379:6379
+    volumes:
+      - newsletter-valkey:/data
+volumes:
+  newsletter-db:
+  newsletter-valkey:
+networks:
+  newsletter-net:
+    driver: bridge
+    name: newsletter-net

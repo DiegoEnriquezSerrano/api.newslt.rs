@@ -1,8 +1,11 @@
 [package]
-name = "zero2prod"
+name = "newsletter_api"
 version = "0.1.0"
-authors = ["LukeMathWalker <rust@lpalmieri.com>"]
-edition = "2021"
+authors = [
+  "DiegEnriquezSerrano <diego@diegoenriquezserrano.dev>",
+  "LukeMathWalker <rust@lpalmieri.com>",
+]
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
@@ -10,7 +13,7 @@ path = "src/lib.rs"
 
 [[bin]]
 path = "src/main.rs"
-name = "zero2prod"
+name = "newsletter_api"
 
 [dependencies]
 actix-web = "4"
@@ -18,19 +21,19 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 serde = "1.0.115"
 config = { version = "0.14", default-features = false, features = ["yaml"] }
 sqlx = { version = "0.8", default-features = false, features = [
-    "runtime-tokio-rustls",
-    "macros",
-    "postgres",
-    "uuid",
-    "chrono",
-    "migrate",
+  "runtime-tokio-rustls",
+  "macros",
+  "postgres",
+  "uuid",
+  "chrono",
+  "migrate",
 ] }
 uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4.22", default-features = false, features = ["clock"] }
 reqwest = { version = "0.12", default-features = false, features = [
-    "json",
-    "rustls-tls",
-    "cookies",
+  "json",
+  "rustls-tls",
+  "cookies",
 ] }
 log = "0.4"
 tracing = "0.1.19"

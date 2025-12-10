@@ -1,33 +1,8 @@
-# Zero To Production In Rust
+# Rust Newsletter API
 
-<div align="center"><a href="https://zero2prod.com" target="_blank"><img src="https://www.zero2prod.com/assets/img/zero2prod.png" width="75%" /></a></div>
+## Description
 
-[Zero To Production In Rust](https://zero2prod.com) is an opinionated introduction to backend development using Rust.
-
-This repository serves as supplementary material for [the book](https://zero2prod.com/): it hosts several snapshots of the codebase for our email newsletter project as it evolves throughout the book.
-
-## Chapter snapshots
-
-The [`main`](https://github.com/LukeMathWalker/zero-to-production) branch shows the project at the end of the book.
-
-You can browse the project at the end of previous chapters by switching to their dedicated branches:
-
-- [Chapter 3, Part 0](https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-03-part0)
-- [Chapter 3, Part 1](https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-03-part1)
-- [Chapter 4](https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-04)
-- [Chapter 5](https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-05)
-- [Chapter 6, Part 0](https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-06-part0)
-- [Chapter 6, Part 1](https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-06-part1)
-- [Chapter 7, Part 0](https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-07-part0)
-- [Chapter 7, Part 1](https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-07-part1)
-- [Chapter 7, Part 2](https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-07-part2)
-- [Chapter 8](https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-08)
-- [Chapter 9](https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-09)
-- [Chapter 10, Part 0](https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-10-part0)
-- [Chapter 10, Part 1](https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-10-part1)
-- [Chapter 10, Part 2](https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-10-part2)
-- [Chapter 10, Part 3](https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-10-part3)
-- [Chapter 11](https://github.com/LukeMathWalker/zero-to-production/tree/root-chapter-11)
+This project builds off of [Zero To Production In Rust](https://zero2prod.com) in an attempt to build a rust based API application that handles the newsletter business logic and communicates with a client via JSON-based HTTP requests.
 
 ## Pre-requisites
 
@@ -58,7 +33,7 @@ sudo apt-get install lld clang libssl-dev postgresql-client
 sudo pacman -S lld clang postgresql
 ```
 
-```
+```bash
 cargo install --version="~0.7" sqlx-cli --no-default-features --features rustls,postgres
 ```
 
@@ -68,22 +43,22 @@ cargo install --version="~0.7" sqlx-cli --no-default-features --features rustls,
 brew install michaeleisel/zld/zld
 ```
 
-```
+```bash
 cargo install --version="~0.7" sqlx-cli --no-default-features --features rustls,postgres
 ```
 
 ## How to build
 
-Launch a (migrated) Postgres database via Docker:
+Start Postgres and Redis services via Docker compose:
+
+```bash
+docker compose up -d --remove-orphans
+```
+
+Launch a (migrated) Postgres database:
 
 ```bash
 ./scripts/init_db.sh
-```
-
-Launch a Redis instance via Docker:
-
-```bash
-./scripts/init_redis.sh
 ```
 
 Launch `cargo`:
@@ -101,16 +76,16 @@ There is a default `admin` account with password
 
 ## How to test
 
-Launch a (migrated) Postgres database via Docker:
+Start Postgres and Redis services via Docker compose:
+
+```bash
+docker compose up -d --remove-orphans
+```
+
+Launch a (migrated) Postgres database:
 
 ```bash
 ./scripts/init_db.sh
-```
-
-Launch a Redis instance via Docker:
-
-```bash
-./scripts/init_redis.sh
 ```
 
 Launch `cargo`:
