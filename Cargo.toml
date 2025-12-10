@@ -16,14 +16,14 @@ path = "src/main.rs"
 name = "newsletter_api"
 
 [dependencies]
-actix-session = { version = "0.11", features = ["redis-session-rustls"] }
-actix-web = "4.11.0"
+actix-session = { version = "0.11.0", features = ["redis-session-rustls"] }
+actix-web = "4.12.1"
 actix-web-flash-messages = { version = "0.5.0", features = ["cookies"] }
 anyhow = "1.0.100"
 argon2 = { version = "0.5.3", features = ["std"] }
 base64 = "0.22.1"
-config = { version = "0.15.16", default-features = false, features = ["yaml"] }
-log = "0.4.28"
+config = { version = "0.15.19", default-features = false, features = ["yaml"] }
+log = "0.4.29"
 rand = { version = "0.8.5", features = ["std_rng"] }
 secrecy = { version = "0.8", features = ["serde"] }
 serde = { version = "1.0.226", features = ["derive"] }
@@ -47,7 +47,7 @@ version = "0.4.42"
 [dependencies.reqwest]
 default-features = false
 features = ["cookies", "json", "rustls-tls"]
-version = "0.12.23"
+version = "0.12.25"
 
 [dependencies.sqlx]
 default-features = false
