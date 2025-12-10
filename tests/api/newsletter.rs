@@ -2,6 +2,7 @@ use crate::helpers::{ConfirmationLinks, TestApp, assert_is_redirect_to, spawn_ap
 use fake::Fake;
 use fake::faker::internet::en::SafeEmail;
 use fake::faker::name::en::Name;
+use newsletter_api::utils::ResponseErrorMessage;
 use std::time::Duration;
 use wiremock::matchers::{any, method, path};
 use wiremock::{Mock, ResponseTemplate};
@@ -227,4 +228,37 @@ async fn concurrent_form_submission_is_handled_gracefully() {
     );
     app.dispatch_all_pending_emails().await;
     // Mock verifies on Drop that we have sent the newsletter email **once**
+}
+
+#[tokio::test]
+async fn responds_with_bad_request_for_invalid_idempotency_key() {
+    // Arrange
+    let app = spawn_app().await;
+    create_confirmed_subscriber(&app).await;
+    app.test_user.login(&app).await;
+
+    Mock::given(any())
+        .respond_with(ResponseTemplate::new(200))
+        .expect(0)
+        .mount(&app.email_server)
+        .await;
+
+    // Act - Part 1 - Submit invalid newsletter form
+    let newsletter_request_body = serde_json::json!({
+        "title": "Newsletter title",
+        "text_content": "Newsletter body as plain text",
+        "html_content": "<p>Newsletter body as HTML</p>",
+        "idempotency_key": ""
+    });
+
+    let response = app.post_publish_newsletter(&newsletter_request_body).await;
+    assert_eq!(400, response.status().as_u16());
+
+    let response_body: ResponseErrorMessage = response.json().await.unwrap();
+    assert_eq!(
+        "The idempotency key cannot be empty".to_string(),
+        response_body.error
+    );
+
+    app.dispatch_all_pending_emails().await;
 }
