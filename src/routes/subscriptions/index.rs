@@ -2,7 +2,7 @@ use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
 use crate::email_client::EmailClient;
 use crate::startup::ApplicationBaseUrl;
 use crate::utils::{e400, e500, error_chain_fmt};
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpResponse, post, web};
 use anyhow::Context;
 use chrono::Utc;
 use rand::distributions::Alphanumeric;
@@ -28,6 +28,7 @@ impl TryFrom<SubscribeParams> for NewSubscriber {
     }
 }
 
+#[post("/subscriptions")]
 #[tracing::instrument(
     name = "Adding a new subscriber",
     skip(form, pool, email_client, base_url),
@@ -36,7 +37,7 @@ impl TryFrom<SubscribeParams> for NewSubscriber {
         subscriber_name = %form.name
     )
 )]
-pub async fn subscribe(
+pub async fn post(
     form: web::Json<SubscribeParams>,
     pool: web::Data<PgPool>,
     email_client: web::Data<EmailClient>,

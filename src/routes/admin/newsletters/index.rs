@@ -2,7 +2,7 @@ use crate::authentication::UserId;
 use crate::idempotency::{IdempotencyKey, NextAction, save_response, try_processing};
 use crate::utils::{e400, e500};
 use actix_web::http::header::ContentType;
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpResponse, post, web};
 use actix_web_flash_messages::FlashMessage;
 use anyhow::Context;
 use serde::Deserialize;
@@ -24,12 +24,13 @@ fn success_message() -> FlashMessage {
     FlashMessage::info(SUCCESS_MESSAGE)
 }
 
+#[post("/newsletters")]
 #[tracing::instrument(
     name = "Publish a newsletter issue",
     skip_all,
     fields(user_id=%&*user_id)
 )]
-pub async fn publish_newsletter(
+pub async fn post(
     params: web::Json<PublishNewsletterParams>,
     pool: web::Data<PgPool>,
     user_id: web::ReqData<UserId>,

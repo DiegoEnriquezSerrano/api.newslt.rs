@@ -3,7 +3,7 @@ use crate::session_state::TypedSession;
 use crate::utils::{ResponseErrorMessage, error_chain_fmt};
 use actix_web::error::InternalError;
 use actix_web::http::header::ContentType;
-use actix_web::{HttpResponse, web};
+use actix_web::{HttpResponse, post, web};
 use actix_web_flash_messages::FlashMessage;
 use secrecy::Secret;
 use serde::Deserialize;
@@ -15,12 +15,13 @@ pub struct LoginParams {
     password: Secret<String>,
 }
 
+#[post("/login")]
 #[tracing::instrument(
     skip(params, pool, session),
     fields(username=tracing::field::Empty, user_id=tracing::field::Empty)
 )]
 // We are now injecting `PgPool` to retrieve stored credentials from the database
-pub async fn login(
+pub async fn post(
     params: web::Json<LoginParams>,
     pool: web::Data<PgPool>,
     session: TypedSession,

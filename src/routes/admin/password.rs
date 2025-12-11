@@ -14,7 +14,7 @@ pub struct ChangePasswordParams {
 }
 
 #[put("/password")]
-pub async fn change_password(
+pub async fn put(
     params: web::Json<ChangePasswordParams>,
     pool: web::Data<PgPool>,
     user_id: web::ReqData<UserId>,
