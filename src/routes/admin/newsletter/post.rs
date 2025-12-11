@@ -1,15 +1,19 @@
 use crate::authentication::UserId;
 use crate::idempotency::{IdempotencyKey, NextAction, save_response, try_processing};
-use crate::utils::e400;
-use crate::utils::{e500, see_other};
+use crate::utils::{e400, e500};
+use actix_web::http::header::ContentType;
 use actix_web::{HttpResponse, web};
 use actix_web_flash_messages::FlashMessage;
 use anyhow::Context;
+use serde::Deserialize;
 use sqlx::{Executor, PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
-#[derive(serde::Deserialize)]
-pub struct FormData {
+const SUCCESS_MESSAGE: &str =
+    "The newsletter issue has been accepted - emails will go out shortly.";
+
+#[derive(Deserialize)]
+pub struct PublishNewsletterParams {
     title: String,
     text_content: String,
     html_content: String,
@@ -17,10 +21,7 @@ pub struct FormData {
 }
 
 fn success_message() -> FlashMessage {
-    FlashMessage::info(
-        "The newsletter issue has been accepted - \
-        emails will go out shortly.",
-    )
+    FlashMessage::info(SUCCESS_MESSAGE)
 }
 
 #[tracing::instrument(
@@ -29,17 +30,17 @@ fn success_message() -> FlashMessage {
     fields(user_id=%&*user_id)
 )]
 pub async fn publish_newsletter(
-    form: web::Form<FormData>,
+    params: web::Json<PublishNewsletterParams>,
     pool: web::Data<PgPool>,
     user_id: web::ReqData<UserId>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let user_id = user_id.into_inner();
-    let FormData {
+    let PublishNewsletterParams {
         title,
         text_content,
         html_content,
         idempotency_key,
-    } = form.0;
+    } = params.0;
     let idempotency_key: IdempotencyKey = idempotency_key.try_into().map_err(e400)?;
     let mut transaction = match try_processing(&pool, &idempotency_key, *user_id)
         .await
@@ -59,7 +60,9 @@ pub async fn publish_newsletter(
         .await
         .context("Failed to enqueue delivery tasks")
         .map_err(e500)?;
-    let response = see_other("/admin/newsletters");
+    let response = HttpResponse::Ok()
+        .content_type(ContentType::json())
+        .json(serde_json::json!({ "message": SUCCESS_MESSAGE }));
     let response = save_response(transaction, &idempotency_key, *user_id, response)
         .await
         .map_err(e500)?;

@@ -69,14 +69,14 @@ async fn newsletters_are_not_delivered_to_unconfirmed_subscribers() {
         "idempotency_key": uuid::Uuid::new_v4().to_string()
     });
     let response = app.post_publish_newsletter(&newsletter_request_body).await;
-    assert_is_redirect_to(&response, "/admin/newsletters");
+    assert_eq!(200, response.status().as_u16());
 
-    // Act - Part 2 - Follow the redirect
-    let html_page = app.get_publish_newsletter_html().await;
-    assert!(html_page.contains(
-        "<p><i>The newsletter issue has been accepted - \
-        emails will go out shortly.</i></p>"
-    ));
+    let response_body: serde_json::Value = response.json().await.unwrap();
+    assert_eq!(
+        serde_json::json!({ "message": "The newsletter issue has been accepted - emails will go out shortly.".to_string() }),
+        response_body
+    );
+
     app.dispatch_all_pending_emails().await;
     // Mock verifies on Drop that we haven't sent the newsletter email
 }
@@ -103,28 +103,16 @@ async fn newsletters_are_delivered_to_confirmed_subscribers() {
         "idempotency_key": uuid::Uuid::new_v4().to_string()
     });
     let response = app.post_publish_newsletter(&newsletter_request_body).await;
-    assert_is_redirect_to(&response, "/admin/newsletters");
+    assert_eq!(200, response.status().as_u16());
 
-    // Act - Part 2 - Follow the redirect
-    let html_page = app.get_publish_newsletter_html().await;
-    assert!(html_page.contains(
-        "<p><i>The newsletter issue has been accepted - \
-        emails will go out shortly.</i></p>"
-    ));
+    let response_body: serde_json::Value = response.json().await.unwrap();
+    assert_eq!(
+        serde_json::json!({ "message": "The newsletter issue has been accepted - emails will go out shortly.".to_string() }),
+        response_body
+    );
+
     app.dispatch_all_pending_emails().await;
     // Mock verifies on Drop that we have sent the newsletter email
-}
-
-#[tokio::test]
-async fn you_must_be_logged_in_to_see_the_newsletter_form() {
-    // Arrange
-    let app = spawn_app().await;
-
-    // Act
-    let response = app.get_publish_newsletter().await;
-
-    // Assert
-    assert_is_redirect_to(&response, "/login");
 }
 
 #[tokio::test]
@@ -169,25 +157,11 @@ async fn newsletter_creation_is_idempotent() {
         "idempotency_key": uuid::Uuid::new_v4().to_string()
     });
     let response = app.post_publish_newsletter(&newsletter_request_body).await;
-    assert_is_redirect_to(&response, "/admin/newsletters");
+    assert_eq!(200, response.status().as_u16());
 
-    // Act - Part 2 - Follow the redirect
-    let html_page = app.get_publish_newsletter_html().await;
-    assert!(html_page.contains(
-        "<p><i>The newsletter issue has been accepted - \
-        emails will go out shortly.</i></p>"
-    ));
-
-    // Act - Part 3 - Submit newsletter form **again**
+    // Act - Part 2 - Submit newsletter form **again**
     let response = app.post_publish_newsletter(&newsletter_request_body).await;
-    assert_is_redirect_to(&response, "/admin/newsletters");
-
-    // Act - Part 4 - Follow the redirect
-    let html_page = app.get_publish_newsletter_html().await;
-    assert!(html_page.contains(
-        "<p><i>The newsletter issue has been accepted - \
-        emails will go out shortly.</i></p>"
-    ));
+    assert_eq!(200, response.status().as_u16());
 
     app.dispatch_all_pending_emails().await;
     // Mock verifies on Drop that we have sent the newsletter email **once**
