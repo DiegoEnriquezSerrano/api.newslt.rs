@@ -1,4 +1,4 @@
-use crate::helpers::{ConfirmationLinks, TestApp, assert_is_redirect_to, spawn_app};
+use crate::helpers::{ConfirmationLinks, TestApp, spawn_app};
 use fake::Fake;
 use fake::faker::internet::en::SafeEmail;
 use fake::faker::name::en::Name;
@@ -130,7 +130,7 @@ async fn you_must_be_logged_in_to_publish_a_newsletter() {
     let response = app.post_publish_newsletter(&newsletter_request_body).await;
 
     // Assert
-    assert_is_redirect_to(&response, "/login");
+    assert_eq!(401, response.status().as_u16());
 }
 
 #[tokio::test]

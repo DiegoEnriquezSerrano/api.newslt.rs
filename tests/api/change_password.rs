@@ -1,4 +1,4 @@
-use crate::helpers::{assert_is_redirect_to, spawn_app};
+use crate::helpers::spawn_app;
 use newsletter_api::utils::ResponseErrorMessage;
 use uuid::Uuid;
 
@@ -18,7 +18,7 @@ async fn you_must_be_logged_in_to_change_your_password() {
         .await;
 
     // Assert
-    assert_is_redirect_to(&response, "/login");
+    assert_eq!(401, response.status().as_u16());
 }
 
 #[tokio::test]

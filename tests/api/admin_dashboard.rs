@@ -1,4 +1,4 @@
-use crate::helpers::{assert_is_redirect_to, spawn_app};
+use crate::helpers::spawn_app;
 
 #[tokio::test]
 async fn logout_clears_session_state() {
@@ -29,5 +29,5 @@ async fn logout_clears_session_state() {
 
     // Act - Part 4 - Attempt authentication
     let response = app.get_authenticate().await;
-    assert_is_redirect_to(&response, "/login");
+    assert_eq!(401, response.status().as_u16());
 }
