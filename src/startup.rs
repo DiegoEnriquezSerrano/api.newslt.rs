@@ -2,7 +2,7 @@ use crate::authentication::reject_anonymous_users;
 use crate::configuration::{DatabaseSettings, Settings};
 use crate::email_client::EmailClient;
 use crate::routes::{
-    admin_dashboard, confirm, health_check, home, log_out, login, password, publish_newsletter,
+    authenticate, confirm, health_check, home, log_out, login, password, publish_newsletter,
     publish_newsletter_form, subscribe,
 };
 use actix_session::SessionMiddleware;
@@ -91,10 +91,10 @@ async fn run(
             .service(
                 web::scope("/admin")
                     .wrap(from_fn(reject_anonymous_users))
-                    .route("/dashboard", web::get().to(admin_dashboard))
                     .route("/logout", web::post().to(log_out))
                     .route("/newsletters", web::get().to(publish_newsletter_form))
                     .route("/newsletters", web::post().to(publish_newsletter))
+                    .service(authenticate::authenticate)
                     .service(password::change_password),
             )
             .route("/login", web::post().to(login))
