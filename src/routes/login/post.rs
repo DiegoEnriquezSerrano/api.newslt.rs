@@ -1,34 +1,33 @@
-use crate::authentication::AuthError;
-use crate::authentication::{Credentials, validate_credentials};
+use crate::authentication::{AuthError, Credentials, validate_credentials};
 use crate::session_state::TypedSession;
-use crate::utils::error_chain_fmt;
-use actix_web::HttpResponse;
+use crate::utils::{ResponseErrorMessage, error_chain_fmt};
 use actix_web::error::InternalError;
-use actix_web::http::header::LOCATION;
-use actix_web::web;
+use actix_web::http::header::ContentType;
+use actix_web::{HttpResponse, web};
 use actix_web_flash_messages::FlashMessage;
 use secrecy::Secret;
+use serde::Deserialize;
 use sqlx::PgPool;
 
-#[derive(serde::Deserialize)]
-pub struct FormData {
+#[derive(Deserialize, Debug)]
+pub struct LoginParams {
     username: String,
     password: Secret<String>,
 }
 
 #[tracing::instrument(
-    skip(form, pool, session),
+    skip(params, pool, session),
     fields(username=tracing::field::Empty, user_id=tracing::field::Empty)
 )]
 // We are now injecting `PgPool` to retrieve stored credentials from the database
 pub async fn login(
-    form: web::Form<FormData>,
+    params: web::Json<LoginParams>,
     pool: web::Data<PgPool>,
     session: TypedSession,
 ) -> Result<HttpResponse, InternalError<LoginError>> {
     let credentials = Credentials {
-        username: form.0.username,
-        password: form.0.password,
+        username: params.0.username,
+        password: params.0.password,
     };
     tracing::Span::current().record("username", tracing::field::display(&credentials.username));
     match validate_credentials(credentials, &pool).await {
@@ -37,10 +36,8 @@ pub async fn login(
             session.renew();
             session
                 .insert_user_id(user_id)
-                .map_err(|e| login_redirect(LoginError::UnexpectedError(e.into())))?;
-            Ok(HttpResponse::SeeOther()
-                .insert_header((LOCATION, "/admin/dashboard"))
-                .finish())
+                .map_err(|e| login_error(LoginError::UnexpectedError(e.into())))?;
+            Ok(HttpResponse::Ok().finish())
         }
         Err(e) => {
             let e = match e {
@@ -48,16 +45,18 @@ pub async fn login(
                 AuthError::UnexpectedError(_) => LoginError::UnexpectedError(e.into()),
                 AuthError::ValidationError(_) => LoginError::AuthError(e.into()),
             };
-            Err(login_redirect(e))
+            Err(login_error(e))
         }
     }
 }
 
-fn login_redirect(e: LoginError) -> InternalError<LoginError> {
+fn login_error(e: LoginError) -> InternalError<LoginError> {
     FlashMessage::error(e.to_string()).send();
-    let response = HttpResponse::SeeOther()
-        .insert_header((LOCATION, "/login"))
-        .finish();
+    let response = HttpResponse::Unauthorized()
+        .insert_header(ContentType::json())
+        .json(ResponseErrorMessage {
+            error: "Authentication failed.".to_string(),
+        });
     InternalError::from_response(e, response)
 }
 

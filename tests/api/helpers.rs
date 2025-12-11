@@ -71,21 +71,10 @@ impl TestApp {
     {
         self.api_client
             .post(&format!("{}/login", &self.address))
-            .form(body)
+            .json(body)
             .send()
             .await
             .expect("Failed to execute request.")
-    }
-
-    pub async fn get_login_html(&self) -> String {
-        self.api_client
-            .get(&format!("{}/login", &self.address))
-            .send()
-            .await
-            .expect("Failed to execute request.")
-            .text()
-            .await
-            .unwrap()
     }
 
     pub async fn get_admin_dashboard(&self) -> reqwest::Response {

@@ -93,7 +93,7 @@ async fn changing_password_works() {
             "password": &app.test_user.password
         }))
         .await;
-    assert_is_redirect_to(&response, "/admin/dashboard");
+    assert_eq!(200, response.status().as_u16());
 
     // Act - Part 2 - Change password
     let response = app
@@ -109,16 +109,12 @@ async fn changing_password_works() {
     let response = app.post_logout().await;
     assert_is_redirect_to(&response, "/login");
 
-    // Act - Part 4 - Follow the redirect
-    let html_page = app.get_login_html().await;
-    assert!(html_page.contains("<p><i>You have successfully logged out.</i></p>"));
-
-    // Act - Part 5 - Login using the new password
+    // Act - Part 4 - Login using the new password
     let response = app
         .post_login(&serde_json::json!({
             "username": &app.test_user.username,
             "password": &new_password
         }))
         .await;
-    assert_is_redirect_to(&response, "/admin/dashboard");
+    assert_eq!(200, response.status().as_u16());
 }

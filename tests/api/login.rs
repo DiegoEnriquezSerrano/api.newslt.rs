@@ -1,7 +1,8 @@
-use crate::helpers::{assert_is_redirect_to, spawn_app};
+use crate::helpers::spawn_app;
+use newsletter_api::utils::ResponseErrorMessage;
 
 #[tokio::test]
-async fn an_error_flash_message_is_set_on_failure() {
+async fn post_login_responds_with_401_on_failure() {
     // Arrange
     let app = spawn_app().await;
 
@@ -13,13 +14,8 @@ async fn an_error_flash_message_is_set_on_failure() {
     let response = app.post_login(&login_body).await;
 
     // Assert
-    assert_is_redirect_to(&response, "/login");
+    assert_eq!(401, response.status().as_u16());
 
-    // Act - Part 2 - Follow the redirect
-    let html_page = app.get_login_html().await;
-    assert!(html_page.contains("<p><i>Authentication failed</i></p>"));
-
-    // Act - Part 3 - Reload the login page
-    let html_page = app.get_login_html().await;
-    assert!(!html_page.contains("Authentication failed"));
+    let response_body: ResponseErrorMessage = response.json().await.unwrap();
+    assert_eq!("Authentication failed.", response_body.error);
 }
