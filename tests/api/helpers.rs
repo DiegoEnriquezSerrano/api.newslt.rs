@@ -1,5 +1,7 @@
 use argon2::password_hash::SaltString;
 use argon2::{Algorithm, Argon2, Params, PasswordHasher, Version};
+use fake::Fake;
+use fake::faker::internet::en::SafeEmail;
 use newsletter_api::configuration::{DatabaseSettings, get_configuration};
 use newsletter_api::email_client::EmailClient;
 use newsletter_api::issue_delivery_worker::{ExecutionOutcome, try_execute_task};
@@ -222,6 +224,7 @@ pub struct TestUser {
     user_id: Uuid,
     pub username: String,
     pub password: String,
+    pub email: String,
 }
 
 impl TestUser {
@@ -230,6 +233,7 @@ impl TestUser {
             user_id: Uuid::new_v4(),
             username: Uuid::new_v4().to_string(),
             password: Uuid::new_v4().to_string(),
+            email: SafeEmail().fake(),
         }
     }
 
@@ -253,11 +257,12 @@ impl TestUser {
         .unwrap()
         .to_string();
         sqlx::query!(
-            "INSERT INTO users (user_id, username, password_hash)
-            VALUES ($1, $2, $3)",
+            "INSERT INTO users (user_id, username, password_hash, email)
+            VALUES ($1, $2, $3, $4)",
             self.user_id,
             self.username,
             password_hash,
+            self.email
         )
         .execute(pool)
         .await
