@@ -1,5 +1,6 @@
 use crate::authentication::UserId;
 use crate::idempotency::{IdempotencyKey, NextAction, save_response, try_processing};
+use crate::models::{NewNewsletterIssue, NewNewsletterIssueData};
 use crate::utils::{e400, e500};
 use actix_web::http::header::ContentType;
 use actix_web::{HttpResponse, post, web};
@@ -14,10 +15,10 @@ const SUCCESS_MESSAGE: &str =
 
 #[derive(Deserialize)]
 pub struct PublishNewsletterParams {
-    title: String,
-    text_content: String,
-    html_content: String,
+    content: String,
+    description: String,
     idempotency_key: String,
+    title: String,
 }
 
 fn success_message() -> FlashMessage {
@@ -36,13 +37,14 @@ pub async fn post(
     user_id: web::ReqData<UserId>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let user_id = user_id.into_inner();
-    let PublishNewsletterParams {
-        title,
-        text_content,
-        html_content,
-        idempotency_key,
-    } = params.0;
-    let idempotency_key: IdempotencyKey = idempotency_key.try_into().map_err(e400)?;
+    let new_newsletter_issue: NewNewsletterIssue = NewNewsletterIssueData {
+        content: params.0.content,
+        description: params.0.description,
+        title: params.0.title,
+    }
+    .try_into()
+    .map_err(e400)?;
+    let idempotency_key: IdempotencyKey = params.0.idempotency_key.try_into().map_err(e400)?;
     let mut transaction = match try_processing(&pool, &idempotency_key, *user_id)
         .await
         .map_err(e500)?
@@ -53,9 +55,13 @@ pub async fn post(
             return Ok(saved_response);
         }
     };
-    let issue_id = insert_newsletter_issue(&mut transaction, &title, &text_content, &html_content)
+    let issue_id = new_newsletter_issue
+        .validate(&user_id, &mut transaction)
         .await
-        .context("Failed to store newsletter issue details")
+        .map_err(e400)?
+        .insert_newsletter_issue(&user_id, &mut transaction)
+        .await
+        .context("Failed to store newsletter issue details.")
         .map_err(e500)?;
     enqueue_delivery_tasks(&mut transaction, issue_id)
         .await
@@ -69,34 +75,6 @@ pub async fn post(
         .map_err(e500)?;
     success_message().send();
     Ok(response)
-}
-
-#[tracing::instrument(skip_all)]
-async fn insert_newsletter_issue(
-    transaction: &mut Transaction<'_, Postgres>,
-    title: &str,
-    text_content: &str,
-    html_content: &str,
-) -> Result<Uuid, sqlx::Error> {
-    let newsletter_issue_id = Uuid::new_v4();
-    let query = sqlx::query!(
-        r#"
-        INSERT INTO newsletter_issues (
-            newsletter_issue_id, 
-            title, 
-            text_content, 
-            html_content,
-            published_at
-        )
-        VALUES ($1, $2, $3, $4, now())
-        "#,
-        newsletter_issue_id,
-        title,
-        text_content,
-        html_content
-    );
-    transaction.execute(query).await?;
-    Ok(newsletter_issue_id)
 }
 
 #[tracing::instrument(skip_all)]

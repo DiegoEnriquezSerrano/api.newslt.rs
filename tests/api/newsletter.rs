@@ -65,8 +65,8 @@ async fn newsletters_are_not_delivered_to_unconfirmed_subscribers() {
     // Act - Part 1 - Submit newsletter form
     let newsletter_request_body = serde_json::json!({
         "title": "Newsletter title",
-        "text_content": "Newsletter body as plain text",
-        "html_content": "<p>Newsletter body as HTML</p>",
+        "description": "Newsletter description as plain text",
+        "content": "## Newsletter body as markdown",
         "idempotency_key": uuid::Uuid::new_v4().to_string()
     });
     let response = app.post_publish_newsletter(&newsletter_request_body).await;
@@ -99,8 +99,8 @@ async fn newsletters_are_delivered_to_confirmed_subscribers() {
     // Act - Part 1 - Submit newsletter form
     let newsletter_request_body = serde_json::json!({
         "title": "Newsletter title",
-        "text_content": "Newsletter body as plain text",
-        "html_content": "<p>Newsletter body as HTML</p>",
+        "description": "Newsletter description as plain text",
+        "content": "## Newsletter body as markdown",
         "idempotency_key": uuid::Uuid::new_v4().to_string()
     });
     let response = app.post_publish_newsletter(&newsletter_request_body).await;
@@ -124,8 +124,8 @@ async fn you_must_be_logged_in_to_publish_a_newsletter() {
     // Act
     let newsletter_request_body = serde_json::json!({
         "title": "Newsletter title",
-        "text_content": "Newsletter body as plain text",
-        "html_content": "<p>Newsletter body as HTML</p>",
+        "description": "Newsletter description as plain text",
+        "content": "## Newsletter body as markdown",
         "idempotency_key": uuid::Uuid::new_v4().to_string()
     });
     let response = app.post_publish_newsletter(&newsletter_request_body).await;
@@ -151,8 +151,8 @@ async fn newsletter_creation_is_idempotent() {
     // Act - Part 1 - Submit newsletter form
     let newsletter_request_body = serde_json::json!({
         "title": "Newsletter title",
-        "text_content": "Newsletter body as plain text",
-        "html_content": "<p>Newsletter body as HTML</p>",
+        "description": "Newsletter description as plain text",
+        "content": "## Newsletter body as markdown",
         // We expect the idempotency key as part of the
         // form data, not as an header
         "idempotency_key": uuid::Uuid::new_v4().to_string()
@@ -187,8 +187,8 @@ async fn concurrent_form_submission_is_handled_gracefully() {
     // Act - Submit two newsletter forms concurrently
     let newsletter_request_body = serde_json::json!({
         "title": "Newsletter title",
-        "text_content": "Newsletter body as plain text",
-        "html_content": "<p>Newsletter body as HTML</p>",
+        "description": "Newsletter description as plain text",
+        "content": "## Newsletter body as markdown",
         "idempotency_key": uuid::Uuid::new_v4().to_string()
     });
     let response1 = app.post_publish_newsletter(&newsletter_request_body);
@@ -220,8 +220,8 @@ async fn responds_with_bad_request_for_invalid_idempotency_key() {
     // Act - Part 1 - Submit invalid newsletter form
     let newsletter_request_body = serde_json::json!({
         "title": "Newsletter title",
-        "text_content": "Newsletter body as plain text",
-        "html_content": "<p>Newsletter body as HTML</p>",
+        "description": "Newsletter description as plain text",
+        "content": "## Newsletter body as markdown",
         "idempotency_key": ""
     });
 

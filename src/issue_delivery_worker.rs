@@ -1,3 +1,4 @@
+use crate::models::{NewsletterIssue, NewsletterIssueEmail};
 use crate::{configuration::Settings, startup::get_connection_pool};
 use crate::{domain::SubscriberEmail, email_client::EmailClient};
 use sqlx::{PgPool, Postgres, Transaction};
@@ -52,7 +53,8 @@ pub async fn try_execute_task(
         .record("subscriber_email", display(&email));
     match SubscriberEmail::parse(email.clone()) {
         Ok(email) => {
-            let issue = get_issue(pool, issue_id).await?;
+            let issue = NewsletterIssue::find_by_newsletter_issue_id(issue_id, pool).await?;
+            let issue: NewsletterIssueEmail = issue.into();
             if let Err(e) = email_client
                 .send_email(
                     &email,
@@ -132,27 +134,4 @@ async fn delete_task(
     .await?;
     transaction.commit().await?;
     Ok(())
-}
-
-struct NewsletterIssue {
-    title: String,
-    text_content: String,
-    html_content: String,
-}
-
-#[tracing::instrument(skip_all)]
-async fn get_issue(pool: &PgPool, issue_id: Uuid) -> Result<NewsletterIssue, anyhow::Error> {
-    let issue = sqlx::query_as!(
-        NewsletterIssue,
-        r#"
-        SELECT title, text_content, html_content
-        FROM newsletter_issues
-        WHERE
-            newsletter_issue_id = $1
-        "#,
-        issue_id
-    )
-    .fetch_one(pool)
-    .await?;
-    Ok(issue)
 }
