@@ -2,6 +2,7 @@ use actix_web::http::StatusCode;
 use actix_web::http::header::{ContentType, LOCATION};
 use actix_web::{HttpResponse, ResponseError};
 use serde::{Deserialize, Serialize};
+use unicode_segmentation::UnicodeSegmentation;
 
 // Return an opaque 500 while preserving the error root's cause for logging.
 pub fn e500<T>(e: T) -> actix_web::Error
@@ -75,4 +76,18 @@ pub fn error_chain_fmt(
     }
 
     Ok(())
+}
+
+const FORBIDDEN_CHARACTERS: [char; 9] = ['/', '(', ')', '"', '<', '>', '\\', '{', '}'];
+
+pub fn contains_forbidden_characters(s: &String) -> bool {
+    s.chars().any(|g| FORBIDDEN_CHARACTERS.contains(&g))
+}
+
+pub fn is_too_long(s: &String, max: usize) -> bool {
+    s.graphemes(true).count() > max
+}
+
+pub fn is_empty_or_whitespace(s: &String) -> bool {
+    s.trim().is_empty()
 }
