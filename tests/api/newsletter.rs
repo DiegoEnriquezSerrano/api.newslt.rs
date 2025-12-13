@@ -1,59 +1,14 @@
-use crate::helpers::{ConfirmationLinks, TestApp, spawn_app};
-use fake::Fake;
-use fake::faker::internet::en::SafeEmail;
-use fake::faker::name::en::Name;
+use crate::helpers::spawn_app;
 use newsletter_api::utils::ResponseErrorMessage;
 use std::time::Duration;
 use wiremock::matchers::{any, method, path};
 use wiremock::{Mock, ResponseTemplate};
 
-async fn create_unconfirmed_subscriber(app: &TestApp) -> ConfirmationLinks {
-    // We are working with multiple subscribers now,
-    // their details must be randomised to avoid conflicts!
-    let name: String = Name().fake();
-    let email: String = SafeEmail().fake();
-    let body = &serde_json::json!({
-        "name": name,
-        "email": email,
-        "user_id": &app.test_user.user_id
-    });
-
-    let _mock_guard = Mock::given(path("/email"))
-        .and(method("POST"))
-        .respond_with(ResponseTemplate::new(200))
-        .named("Create unconfirmed subscriber")
-        .expect(1)
-        .mount_as_scoped(&app.email_server)
-        .await;
-    app.post_subscriptions(body)
-        .await
-        .error_for_status()
-        .unwrap();
-
-    let email_request = &app
-        .email_server
-        .received_requests()
-        .await
-        .unwrap()
-        .pop()
-        .unwrap();
-    app.get_confirmation_links(email_request)
-}
-
-async fn create_confirmed_subscriber(app: &TestApp) {
-    let confirmation_link = create_unconfirmed_subscriber(app).await.html;
-    reqwest::get(confirmation_link)
-        .await
-        .unwrap()
-        .error_for_status()
-        .unwrap();
-}
-
 #[tokio::test]
 async fn newsletters_are_not_delivered_to_unconfirmed_subscribers() {
     // Arrange
     let app = spawn_app().await;
-    create_unconfirmed_subscriber(&app).await;
+    app.create_unconfirmed_subscriber().await;
     app.test_user.login(&app).await;
 
     Mock::given(any())
@@ -86,7 +41,7 @@ async fn newsletters_are_not_delivered_to_unconfirmed_subscribers() {
 async fn newsletters_are_delivered_to_confirmed_subscribers() {
     // Arrange
     let app = spawn_app().await;
-    create_confirmed_subscriber(&app).await;
+    app.create_confirmed_subscriber().await;
     app.test_user.login(&app).await;
 
     Mock::given(path("/email"))
@@ -138,7 +93,7 @@ async fn you_must_be_logged_in_to_publish_a_newsletter() {
 async fn newsletter_creation_is_idempotent() {
     // Arrange
     let app = spawn_app().await;
-    create_confirmed_subscriber(&app).await;
+    app.create_confirmed_subscriber().await;
     app.test_user.login(&app).await;
 
     Mock::given(path("/email"))
@@ -172,7 +127,7 @@ async fn newsletter_creation_is_idempotent() {
 async fn concurrent_form_submission_is_handled_gracefully() {
     // Arrange
     let app = spawn_app().await;
-    create_confirmed_subscriber(&app).await;
+    app.create_confirmed_subscriber().await;
     app.test_user.login(&app).await;
 
     Mock::given(path("/email"))
@@ -208,7 +163,7 @@ async fn concurrent_form_submission_is_handled_gracefully() {
 async fn responds_with_bad_request_for_invalid_idempotency_key() {
     // Arrange
     let app = spawn_app().await;
-    create_confirmed_subscriber(&app).await;
+    app.create_confirmed_subscriber().await;
     app.test_user.login(&app).await;
 
     Mock::given(any())

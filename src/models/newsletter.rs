@@ -46,6 +46,64 @@ impl NewsletterIssue {
 
         Ok(issue)
     }
+
+    pub async fn get_published_by_user_id(
+        user_id: Uuid,
+        pool: &PgPool,
+    ) -> Result<Vec<Self>, sqlx::Error> {
+        let newsletter_issues = sqlx::query_as!(
+            NewsletterIssue,
+            r#"
+              SELECT
+                content,
+                created_at,
+                description,
+                newsletter_issue_id,
+                published_at,
+                slug,
+                title,
+                user_id
+              FROM newsletter_issues
+              WHERE user_id = $1 AND published_at IS NOT NULL
+              ORDER BY published_at DESC
+              LIMIT 10
+            "#,
+            user_id
+        )
+        .fetch_all(pool)
+        .await?;
+
+        Ok(newsletter_issues)
+    }
+
+    pub async fn get_unpublished_by_user_id(
+        user_id: Uuid,
+        pool: &PgPool,
+    ) -> Result<Vec<Self>, sqlx::Error> {
+        let newsletter_issues = sqlx::query_as!(
+            NewsletterIssue,
+            r#"
+              SELECT
+                content,
+                created_at,
+                description,
+                newsletter_issue_id,
+                published_at,
+                slug,
+                title,
+                user_id
+              FROM newsletter_issues
+              WHERE user_id = $1 AND published_at IS NULL
+              ORDER BY created_at DESC
+              LIMIT 10
+            "#,
+            user_id
+        )
+        .fetch_all(pool)
+        .await?;
+
+        Ok(newsletter_issues)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -67,7 +125,7 @@ impl From<NewsletterIssue> for NewsletterIssueAPI {
         Self {
             content: newsletter_issue.content,
             description: newsletter_issue.description,
-            html_content: html_content,
+            html_content,
             newsletter_issue_id: newsletter_issue.newsletter_issue_id,
             published_at: newsletter_issue.published_at,
             slug: newsletter_issue.slug,
@@ -173,7 +231,7 @@ impl NewNewsletterIssue {
                     title,
                     user_id
                   )
-                  VALUES ($1, now(), $2, $3, now(), $4, $5, $6)
+                  VALUES ($1, now(), $2, $3, NULL, $4, $5, $6)
                 "#,
                 self.content,
                 self.description,

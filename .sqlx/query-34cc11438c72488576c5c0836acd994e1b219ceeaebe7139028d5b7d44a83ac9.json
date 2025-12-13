@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n              SELECT\n                content,\n                created_at,\n                description,\n                newsletter_issue_id,\n                published_at,\n                slug,\n                title,\n                user_id\n              FROM newsletter_issues\n              WHERE user_id = $1 AND published_at IS NOT NULL\n              ORDER BY published_at DESC\n              LIMIT 10\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "newsletter_issue_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "published_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "slug",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "user_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "34cc11438c72488576c5c0836acd994e1b219ceeaebe7139028d5b7d44a83ac9"
+}

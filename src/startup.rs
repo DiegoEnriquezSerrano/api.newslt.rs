@@ -90,7 +90,9 @@ async fn run(
                     .wrap(from_fn(reject_anonymous_users))
                     .service(admin::authenticate::get)
                     .service(admin::logout::post)
+                    .service(admin::newsletters::get)
                     .service(admin::newsletters::post)
+                    .service(admin::newsletters::drafts::get)
                     .service(admin::password::put),
             )
             .service(health_check::get)
