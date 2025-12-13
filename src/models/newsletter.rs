@@ -1,8 +1,9 @@
-use crate::domain::newsletter_issue::{Description, Title};
+use crate::domain::newsletter_issue::{Content, Description, Title};
 use anyhow::Context;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::{Executor, PgPool, Postgres, Transaction, postgres::PgRow};
+use sqlx::postgres::PgRow;
+use sqlx::{Executor, PgPool, Postgres, Row, Transaction};
 use uuid::Uuid;
 use voca_rs::strip;
 
@@ -16,6 +17,23 @@ pub struct NewsletterIssue {
     pub slug: String,
     pub title: String,
     pub user_id: Uuid,
+}
+
+impl TryFrom<PgRow> for NewsletterIssue {
+    type Error = sqlx::Error;
+
+    fn try_from(row: PgRow) -> Result<Self, Self::Error> {
+        Ok(Self {
+            content: row.try_get("content")?,
+            created_at: row.try_get("created_at")?,
+            description: row.try_get("description")?,
+            newsletter_issue_id: row.try_get("newsletter_issue_id")?,
+            published_at: row.try_get("published_at")?,
+            slug: row.try_get("slug")?,
+            title: row.try_get("title")?,
+            user_id: row.try_get("user_id")?,
+        })
+    }
 }
 
 impl NewsletterIssue {
@@ -45,6 +63,37 @@ impl NewsletterIssue {
         )
         .fetch_one(pool)
         .await?;
+
+        Ok(newsletter_issue)
+    }
+
+    pub async fn find_by_user_id_and_newsletter_issue_id_txn(
+        user_id: Uuid,
+        newsletter_issue_id: &Uuid,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> Result<Self, sqlx::Error> {
+        let newsletter_issue: NewsletterIssue = transaction
+            .fetch_one(sqlx::query_as!(
+                NewsletterIssue,
+                r#"
+                  SELECT
+                    content,
+                    created_at,
+                    description,
+                    newsletter_issue_id,
+                    published_at,
+                    slug,
+                    title,
+                    user_id
+                  FROM newsletter_issues
+                  WHERE user_id = $1 AND newsletter_issue_id = $2
+                  LIMIT 1
+                "#,
+                user_id,
+                newsletter_issue_id
+            ))
+            .await?
+            .try_into()?;
 
         Ok(newsletter_issue)
     }
@@ -133,6 +182,43 @@ impl NewsletterIssue {
         .await?;
 
         Ok(newsletter_issues)
+    }
+
+    pub async fn publish_newsletter(
+        self,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> Result<Uuid, sqlx::Error> {
+        transaction
+            .execute(sqlx::query!(
+                r#"
+                  UPDATE newsletter_issues
+                  SET published_at = now()
+                  WHERE newsletter_issue_id = $1
+                    AND user_id = $2
+                "#,
+                &self.newsletter_issue_id,
+                self.user_id,
+            ))
+            .await?;
+
+        Ok(self.newsletter_issue_id)
+    }
+
+    pub fn validate_for_publish(self) -> Result<Self, String> {
+        let content = Content::parse(self.content)?;
+        let description = Description::parse(self.description)?;
+        let title = Title::parse(self.title)?;
+
+        Ok(Self {
+            content: content.as_ref().to_string(),
+            created_at: self.created_at,
+            description: description.as_ref().to_string(),
+            newsletter_issue_id: self.newsletter_issue_id,
+            published_at: self.published_at,
+            slug: self.slug,
+            title: title.as_ref().to_string(),
+            user_id: self.user_id,
+        })
     }
 }
 
@@ -287,7 +373,7 @@ impl TryFrom<NewNewsletterIssueData> for NewNewsletterIssue {
     type Error = String;
 
     fn try_from(data: NewNewsletterIssueData) -> Result<NewNewsletterIssue, String> {
-        let description = Description::parse(data.description)?;
+        let description = Description::parse_draft(data.description)?;
         let newsletter_issue_id = Uuid::new_v4();
         let title = Title::parse(data.title)?;
 

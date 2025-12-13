@@ -1,6 +1,6 @@
 use crate::utils::error_chain_fmt;
 use actix_web::http::StatusCode;
-use actix_web::{HttpResponse, ResponseError, get, web};
+use actix_web::{HttpResponse, ResponseError, put, web};
 use anyhow::Context;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -33,9 +33,9 @@ impl ResponseError for ConfirmationError {
     }
 }
 
-#[get("/subscriptions/confirm")]
+#[put("/subscriptions/confirm")]
 #[tracing::instrument(name = "Confirm a pending subscriber", skip(parameters, pool))]
-pub async fn get(
+pub async fn put(
     parameters: web::Query<Parameters>,
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, ConfirmationError> {

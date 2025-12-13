@@ -75,6 +75,25 @@ pub struct ResponseErrorMessage {
     pub error: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ResponseMessage {
+    pub message: String,
+}
+
+impl From<String> for ResponseMessage {
+    fn from(value: String) -> Self {
+        Self { message: value }
+    }
+}
+
+impl From<&str> for ResponseMessage {
+    fn from(value: &str) -> Self {
+        Self {
+            message: value.to_string(),
+        }
+    }
+}
+
 pub fn error_chain_fmt(
     e: &impl std::error::Error,
     f: &mut std::fmt::Formatter<'_>,

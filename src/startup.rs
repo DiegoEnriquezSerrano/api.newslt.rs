@@ -94,11 +94,12 @@ async fn run(
                     .service(admin::newsletters::post)
                     .service(admin::newsletters::drafts::get)
                     .service(admin::newsletters::detail::get)
+                    .service(admin::newsletters::detail::publish::put)
                     .service(admin::password::put),
             )
             .service(health_check::get)
             .service(login::post)
-            .service(subscriptions::confirm::get)
+            .service(subscriptions::confirm::put)
             .service(subscriptions::post)
             .app_data(db_pool.clone())
             .app_data(email_client.clone())

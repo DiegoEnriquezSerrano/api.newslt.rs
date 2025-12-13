@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                  UPDATE newsletter_issues\n                  SET published_at = now()\n                  WHERE newsletter_issue_id = $1\n                    AND user_id = $2\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2d0ff1d8ba456484ab321f52200cb98c28eab837a5757ad9fa8aca5dc6c8420b"
+}

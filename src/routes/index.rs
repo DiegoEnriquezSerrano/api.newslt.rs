@@ -1,3 +1,4 @@
+use crate::utils::ResponseMessage;
 use actix_web::http::header::ContentType;
 use actix_web::{HttpResponse, get};
 
@@ -5,5 +6,5 @@ use actix_web::{HttpResponse, get};
 pub async fn get() -> HttpResponse {
     HttpResponse::Ok()
         .content_type(ContentType::json())
-        .json(serde_json::json!({"message": "Welcome to our newsletter!"}))
+        .json(ResponseMessage::from("Welcome to our newsletter!"))
 }

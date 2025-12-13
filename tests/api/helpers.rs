@@ -130,12 +130,31 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
-    pub async fn post_publish_newsletter<Body>(&self, body: &Body) -> reqwest::Response
+    pub async fn post_admin_create_newsletter<Body>(&self, body: &Body) -> reqwest::Response
     where
         Body: serde::Serialize,
     {
         self.api_client
             .post(&format!("{}/admin/newsletters", &self.address))
+            .json(body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub async fn put_admin_publish_newsletter<Body>(
+        &self,
+        newsletter_issue_id: &Uuid,
+        body: &Body,
+    ) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
+        self.api_client
+            .put(&format!(
+                "{}/admin/newsletter/{}/publish",
+                &self.address, newsletter_issue_id
+            ))
             .json(body)
             .send()
             .await
@@ -150,15 +169,20 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
-    pub async fn create_unconfirmed_subscriber(&self) -> ConfirmationLinks {
+    pub async fn create_unconfirmed_subscriber(
+        &self,
+        user_id: Option<Uuid>,
+        email: Option<String>,
+    ) -> ConfirmationLinks {
         // We are working with multiple subscribers now,
         // their details must be randomised to avoid conflicts!
         let name: String = Name().fake();
-        let email: String = SafeEmail().fake();
+        let email: String = email.unwrap_or(SafeEmail().fake());
+        let user_id: Uuid = user_id.unwrap_or(self.test_user.user_id);
         let body = &serde_json::json!({
             "name": name,
             "email": email,
-            "user_id": &self.test_user.user_id
+            "user_id": user_id
         });
 
         let _mock_guard = Mock::given(path("/email"))
@@ -183,13 +207,14 @@ impl TestApp {
         self.get_confirmation_links(&email_request)
     }
 
-    pub async fn create_confirmed_subscriber(&self) {
-        let confirmation_link = self.create_unconfirmed_subscriber().await.html;
-        reqwest::get(confirmation_link)
+    pub async fn create_confirmed_subscriber(&self, user_id: Option<Uuid>, email: Option<String>) {
+        let confirmation_link = self.create_unconfirmed_subscriber(user_id, email).await;
+
+        self.api_client
+            .put(confirmation_link.html)
+            .send()
             .await
-            .unwrap()
-            .error_for_status()
-            .unwrap();
+            .expect("Failed to confirm subscriber.");
     }
 
     /// Extract the confirmation links embedded in the request to the email API.

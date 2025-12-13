@@ -25,14 +25,14 @@ async fn drafts_are_listed_by_created_at() {
     let app = spawn_app().await;
     app.test_user.login(&app).await;
 
-    app.post_publish_newsletter(&serde_json::json!({
+    app.post_admin_create_newsletter(&serde_json::json!({
       "title": "Newsletter title",
       "description": "Newsletter description",
       "content": "## Newsletter content",
       "idempotency_key": uuid::Uuid::new_v4().to_string()
     }))
     .await;
-    app.post_publish_newsletter(&serde_json::json!({
+    app.post_admin_create_newsletter(&serde_json::json!({
       "title": "Newsletter title 2",
       "description": "Newsletter description 2",
       "content": "## Newsletter content 2",

@@ -8,9 +8,12 @@ async fn confirmations_without_token_are_rejected_with_a_400() {
     let app = spawn_app().await;
 
     // Act
-    let response = reqwest::get(&format!("{}/subscriptions/confirm", app.address))
+    let response = app
+        .api_client
+        .put(&format!("{}/subscriptions/confirm", app.address))
+        .send()
         .await
-        .unwrap();
+        .expect("Failed to confirm subscriber.");
 
     // Assert
     assert_eq!(response.status().as_u16(), 400);
@@ -35,7 +38,12 @@ async fn the_link_returned_by_subscribe_returns_a_200_if_called() {
     let confirmation_links = app.get_confirmation_links(email_request);
 
     // Act
-    let response = reqwest::get(confirmation_links.html).await.unwrap();
+    let response = app
+        .api_client
+        .put(confirmation_links.html)
+        .send()
+        .await
+        .expect("Failed to confirm subscriber.");
 
     // Assert
     assert_eq!(response.status().as_u16(), 200);
@@ -60,11 +68,12 @@ async fn clicking_on_the_confirmation_link_confirms_a_subscriber() {
     let confirmation_links = app.get_confirmation_links(email_request);
 
     // Act
-    reqwest::get(confirmation_links.html)
+    let _ = app
+        .api_client
+        .put(confirmation_links.html)
+        .send()
         .await
-        .unwrap()
-        .error_for_status()
-        .unwrap();
+        .expect("Failed to confirm subscriber.");
 
     // Assert
     let saved = sqlx::query!("SELECT email, name, status FROM subscriptions",)

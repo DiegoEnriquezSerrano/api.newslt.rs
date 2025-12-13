@@ -6,11 +6,10 @@ use secrecy::Secret;
 async fn unauthenticated_user_cannot_fetch_a_newsletter() {
     let app = spawn_app().await;
     app.test_user.login(&app).await;
-    app.post_publish_newsletter(&serde_json::json!({
+    app.post_admin_create_newsletter(&serde_json::json!({
       "title": "Newsletter title",
       "description": "Newsletter description",
-      "content": "## Newsletter content",
-      "idempotency_key": uuid::Uuid::new_v4().to_string()
+      "content": "## Newsletter content"
     }))
     .await;
 
@@ -28,11 +27,10 @@ async fn unauthenticated_user_cannot_fetch_a_newsletter() {
 async fn authenticated_user_can_fetch_a_newsletter() {
     let app = spawn_app().await;
     app.test_user.login(&app).await;
-    app.post_publish_newsletter(&serde_json::json!({
+    app.post_admin_create_newsletter(&serde_json::json!({
       "title": "Newsletter title",
       "description": "Newsletter description",
-      "content": "## Newsletter content",
-      "idempotency_key": uuid::Uuid::new_v4().to_string()
+      "content": "## Newsletter content"
     }))
     .await;
 
@@ -53,11 +51,10 @@ async fn authenticated_user_can_fetch_a_newsletter() {
 async fn authenticated_user_cannot_view_anothers_newsletter() {
     let app = spawn_app().await;
     app.test_user.login(&app).await;
-    app.post_publish_newsletter(&serde_json::json!({
+    app.post_admin_create_newsletter(&serde_json::json!({
       "title": "Newsletter title",
       "description": "Newsletter description",
-      "content": "## Newsletter content",
-      "idempotency_key": uuid::Uuid::new_v4().to_string()
+      "content": "## Newsletter content"
     }))
     .await;
 

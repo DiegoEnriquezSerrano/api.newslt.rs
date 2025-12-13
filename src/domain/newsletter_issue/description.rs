@@ -21,6 +21,16 @@ impl Description {
             Ok(Self(s))
         }
     }
+
+    pub fn parse_draft(s: String) -> Result<Description, String> {
+        if is_too_long(&s, 200) {
+            Err(String::from("Description exceeds character limit."))
+        } else if contains_forbidden_characters(&s) {
+            Err(String::from("Description includes illegal characters."))
+        } else {
+            Ok(Self(s))
+        }
+    }
 }
 
 #[cfg(test)]
