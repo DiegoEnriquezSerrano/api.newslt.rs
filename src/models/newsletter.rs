@@ -19,6 +19,36 @@ pub struct NewsletterIssue {
 }
 
 impl NewsletterIssue {
+    pub async fn find_by_user_id_and_newsletter_issue_id(
+        user_id: Uuid,
+        newsletter_issue_id: &Uuid,
+        pool: &PgPool,
+    ) -> Result<Self, sqlx::Error> {
+        let newsletter_issue = sqlx::query_as!(
+            NewsletterIssue,
+            r#"
+              SELECT
+                content,
+                created_at,
+                description,
+                newsletter_issue_id,
+                published_at,
+                slug,
+                title,
+                user_id
+              FROM newsletter_issues
+              WHERE user_id = $1 AND newsletter_issue_id = $2
+              LIMIT 1
+            "#,
+            user_id,
+            newsletter_issue_id
+        )
+        .fetch_one(pool)
+        .await?;
+
+        Ok(newsletter_issue)
+    }
+
     pub async fn find_by_newsletter_issue_id(
         newsletter_issue_id: Uuid,
         db_pool: &PgPool,

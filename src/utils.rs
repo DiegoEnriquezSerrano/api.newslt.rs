@@ -21,6 +21,15 @@ where
     ServerError::BadRequestError(e).into()
 }
 
+// Return a 404 with the user-representation of the validation error as body.
+// The error root cause is preserved for logging purposes.
+pub fn e404<T>(e: T) -> actix_web::Error
+where
+    T: std::fmt::Debug + std::fmt::Display + 'static,
+{
+    ServerError::NotFoundError(e).into()
+}
+
 pub fn see_other(location: &str) -> HttpResponse {
     HttpResponse::SeeOther()
         .insert_header((LOCATION, location))
@@ -33,6 +42,8 @@ pub enum ServerError<T: std::fmt::Debug + std::fmt::Display + 'static> {
     UnexpectedError(T),
     #[error("{0}")]
     BadRequestError(T),
+    #[error("{0}")]
+    NotFoundError(T),
 }
 
 impl<T: std::fmt::Debug + std::fmt::Display + 'static> std::fmt::Debug for ServerError<T> {
@@ -46,6 +57,7 @@ impl<T: std::fmt::Debug + std::fmt::Display + 'static> ResponseError for ServerE
         match self {
             ServerError::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             ServerError::BadRequestError(_) => StatusCode::BAD_REQUEST,
+            ServerError::NotFoundError(_) => StatusCode::NOT_FOUND,
         }
     }
 

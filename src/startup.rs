@@ -93,6 +93,7 @@ async fn run(
                     .service(admin::newsletters::get)
                     .service(admin::newsletters::post)
                     .service(admin::newsletters::drafts::get)
+                    .service(admin::newsletters::detail::get)
                     .service(admin::password::put),
             )
             .service(health_check::get)
