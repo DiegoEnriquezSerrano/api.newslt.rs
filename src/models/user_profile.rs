@@ -21,6 +21,36 @@ impl UserProfile {
         }
     }
 
+    pub async fn find_user_profile_api_by_user_id(
+        user_id: Uuid,
+        pool: &PgPool,
+    ) -> Result<UserProfileAPI, sqlx::Error> {
+        let user: UserProfileAPI = sqlx::query_as!(
+            UserProfileAPI,
+            r#"
+              SELECT
+                bio,
+                description,
+                display_name,
+                username,
+                (
+                  SELECT COUNT(*)
+                  FROM newsletter_issues
+                  WHERE published_at IS NOT NULL
+                    AND users.user_id = newsletter_issues.user_id
+                ) as "total_issues"
+              FROM users
+              JOIN user_profiles ON users.user_id = user_profiles.user_id
+              WHERE users.user_id = $1
+            "#,
+            user_id
+        )
+        .fetch_one(pool)
+        .await?;
+
+        Ok(user)
+    }
+
     pub fn validate(self) -> Result<UserProfile, String> {
         let description = Description::parse(self.description)?.as_ref().to_string();
         let display_name = DisplayName::parse(self.display_name)?.as_ref().to_string();
@@ -79,6 +109,15 @@ impl UserProfile {
 
         Ok(())
     }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct UserProfileAPI {
+    pub bio: String,
+    pub description: String,
+    pub display_name: String,
+    pub username: String,
+    pub total_issues: Option<i64>,
 }
 
 #[cfg(test)]
