@@ -94,6 +94,7 @@ async fn run(
                     .service(admin::newsletters::post)
                     .service(admin::newsletters::drafts::get)
                     .service(admin::newsletters::detail::get)
+                    .service(admin::newsletters::detail::put)
                     .service(admin::newsletters::detail::publish::put)
                     .service(admin::password::put),
             )
