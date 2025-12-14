@@ -184,6 +184,31 @@ impl NewsletterIssue {
         Ok(newsletter_issues)
     }
 
+    pub async fn update(
+        self,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> Result<Self, sqlx::Error> {
+        transaction
+            .execute(sqlx::query!(
+                r#"
+                  UPDATE newsletter_issues
+                  SET content = $1,
+                      description = $2,
+                      title = $3
+                  WHERE newsletter_issue_id = $4
+                      AND user_id = $5
+                "#,
+                &self.content,
+                &self.description,
+                &self.title,
+                &self.newsletter_issue_id,
+                &self.user_id
+            ))
+            .await?;
+
+        Ok(self)
+    }
+
     pub async fn publish_newsletter(
         self,
         transaction: &mut Transaction<'_, Postgres>,
