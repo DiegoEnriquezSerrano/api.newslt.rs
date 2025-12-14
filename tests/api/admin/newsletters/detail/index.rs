@@ -150,9 +150,15 @@ async fn unauthenticated_user_cannot_update_a_newsletter() {
         .await;
     assert_eq!(401, response.status().as_u16());
 
-    app.test_user.login(&app).await;
+    let response = app.post_login(
+        &serde_json::json!({"username": &app.test_user.username, "password": &app.test_user.password}),
+    )
+    .await;
+    assert_eq!(200, response.status().as_u16());
 
     let response = app.get_admin_newsletter_issue(&newsletter_issue_id).await;
+    assert_eq!(200, response.status().as_u16());
+
     let response_body: NewsletterIssueAPI = response.json().await.unwrap();
     assert_eq!(String::from("Newsletter title"), response_body.title);
 }

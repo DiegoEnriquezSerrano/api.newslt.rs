@@ -1,12 +1,16 @@
 use crate::session_state::TypedSession;
-use crate::utils::e500;
+use crate::utils::{ResponseErrorMessage, e500};
 use actix_web::body::MessageBody;
 use actix_web::dev::{ServiceRequest, ServiceResponse};
 use actix_web::error::InternalError;
+use actix_web::http::StatusCode;
+use actix_web::http::header::ContentType;
 use actix_web::middleware::Next;
 use actix_web::{FromRequest, HttpMessage, HttpResponse};
 use std::ops::Deref;
 use uuid::Uuid;
+
+const UNAUTHORIZED_MESSAGE: &str = "The user has not logged in";
 
 #[derive(Copy, Clone, Debug)]
 pub struct UserId(Uuid);
@@ -40,8 +44,10 @@ pub async fn reject_anonymous_users(
             next.call(req).await
         }
         None => {
-            let response = HttpResponse::Unauthorized().finish();
-            let e = anyhow::anyhow!("The user has not logged in");
+            let response = HttpResponse::build(StatusCode::UNAUTHORIZED)
+                .content_type(ContentType::json())
+                .json(ResponseErrorMessage::from(UNAUTHORIZED_MESSAGE));
+            let e = anyhow::anyhow!(UNAUTHORIZED_MESSAGE);
             Err(InternalError::from_response(e, response).into())
         }
     }

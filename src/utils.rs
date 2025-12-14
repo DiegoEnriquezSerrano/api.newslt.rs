@@ -75,6 +75,20 @@ pub struct ResponseErrorMessage {
     pub error: String,
 }
 
+impl From<String> for ResponseErrorMessage {
+    fn from(value: String) -> Self {
+        Self { error: value }
+    }
+}
+
+impl From<&str> for ResponseErrorMessage {
+    fn from(value: &str) -> Self {
+        Self {
+            error: value.to_string(),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ResponseMessage {
     pub message: String,
