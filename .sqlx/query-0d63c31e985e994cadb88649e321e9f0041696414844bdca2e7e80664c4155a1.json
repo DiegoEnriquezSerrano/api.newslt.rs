@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n              UPDATE user_profiles\n              SET bio = $1,\n                  description = $2,\n                  display_name = $3\n              WHERE user_id = $4\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Varchar",
+        "Varchar",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0d63c31e985e994cadb88649e321e9f0041696414844bdca2e7e80664c4155a1"
+}

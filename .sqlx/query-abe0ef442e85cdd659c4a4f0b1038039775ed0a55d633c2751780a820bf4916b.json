@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                  INSERT INTO user_profiles (\n                    bio,\n                    description,\n                    display_name,\n                    user_profile_id,\n                    user_id\n                  )\n                  VALUES ($1, $2, $3, $4, $5)\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Varchar",
+        "Varchar",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "abe0ef442e85cdd659c4a4f0b1038039775ed0a55d633c2751780a820bf4916b"
+}
