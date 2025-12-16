@@ -1,1 +1,2 @@
+mod detail;
 mod index;

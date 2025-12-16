@@ -107,6 +107,7 @@ async fn run(
             .service(newsletters::by_user::get)
             .service(subscriptions::confirm::put)
             .service(subscriptions::post)
+            .service(users::detail::get)
             .service(users::get)
             .app_data(db_pool.clone())
             .app_data(email_client.clone())

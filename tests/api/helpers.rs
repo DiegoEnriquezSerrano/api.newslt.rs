@@ -242,6 +242,14 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
+    pub async fn get_user(&self, username: &String) -> reqwest::Response {
+        self.api_client
+            .get(&format!("{}/users/{}", &self.address, username))
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
     pub async fn get_authenticate(&self) -> reqwest::Response {
         self.api_client
             .get(&format!("{}/admin/authenticate", &self.address))
