@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n              SELECT\n                bio,\n                bio AS \"bio_html!: String\",\n                description,\n                display_name,\n                username,\n                (\n                  SELECT COUNT(*)\n                  FROM newsletter_issues\n                  WHERE published_at IS NOT NULL\n                    AND users.user_id = newsletter_issues.user_id\n                ) as \"total_issues\"\n              FROM users\n              JOIN user_profiles ON users.user_id = user_profiles.user_id\n              WHERE users.user_id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "bio",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "bio_html!: String",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "display_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "username",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "total_issues",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "ea4cc792ba3be7d98188f1d4f261f49660fb1a9bd530a41294335bd730ad4fca"
+}

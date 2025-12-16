@@ -1,5 +1,5 @@
 use crate::domain::user_profile::{Description, DisplayName};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 use sqlx::{Executor, PgPool, Postgres, Transaction, Type};
 use uuid::Uuid;
 
@@ -25,11 +25,12 @@ impl UserProfile {
         user_id: Uuid,
         pool: &PgPool,
     ) -> Result<UserProfileAPI, sqlx::Error> {
-        let user: UserProfileAPI = sqlx::query_as!(
+        sqlx::query_as!(
             UserProfileAPI,
             r#"
               SELECT
                 bio,
+                bio AS "bio_html!: String",
                 description,
                 display_name,
                 username,
@@ -46,9 +47,60 @@ impl UserProfile {
             user_id
         )
         .fetch_one(pool)
-        .await?;
+        .await
+    }
 
-        Ok(user)
+    pub async fn get_public_profiles(
+        pool: &PgPool,
+    ) -> Result<Vec<PublicProfileListItem>, sqlx::Error> {
+        sqlx::query_as!(
+            PublicProfileListItem,
+            r#"
+              SELECT
+                description,
+                display_name,
+                username,
+                (
+                  SELECT COUNT(*)
+                  FROM newsletter_issues
+                  WHERE published_at IS NOT NULL
+                    AND users.user_id = newsletter_issues.user_id
+                ) AS "total_issues!: i64"
+              FROM users
+              JOIN user_profiles ON users.user_id = user_profiles.user_id
+              LIMIT 10
+            "#
+        )
+        .fetch_all(pool)
+        .await
+    }
+
+    pub async fn find_public_profile(
+        username: String,
+        pool: &PgPool,
+    ) -> Result<PublicProfile, sqlx::Error> {
+        sqlx::query_as!(
+            PublicProfile,
+            r#"
+              SELECT
+                bio,
+                description,
+                display_name,
+                username,
+                (
+                  SELECT COUNT(*)
+                  FROM newsletter_issues
+                  WHERE published_at IS NOT NULL
+                    AND users.user_id = newsletter_issues.user_id
+                ) AS "total_issues!: i64"
+              FROM users
+              JOIN user_profiles ON users.user_id = user_profiles.user_id
+              WHERE users.username = $1
+            "#,
+            username
+        )
+        .fetch_one(pool)
+        .await
     }
 
     pub fn validate(self) -> Result<UserProfile, String> {
@@ -114,6 +166,8 @@ impl UserProfile {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UserProfileAPI {
     pub bio: String,
+    #[serde(serialize_with = "serialize_bio")]
+    pub bio_html: String,
     pub description: String,
     pub display_name: String,
     pub username: String,
@@ -125,6 +179,27 @@ pub struct AssociatedUser {
     pub description: String,
     pub display_name: String,
     pub username: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PublicProfile {
+    #[serde(serialize_with = "serialize_bio")]
+    pub bio: String,
+    pub description: String,
+    pub display_name: String,
+    pub username: String,
+    pub total_issues: i64,
+}
+
+fn serialize_bio<S: Serializer>(bio: &str, serializer: S) -> Result<S::Ok, S::Error> {
+    markdown::to_html(bio).serialize(serializer)
+}
+
+pub struct PublicProfileListItem {
+    pub description: String,
+    pub display_name: String,
+    pub username: String,
+    pub total_issues: i64,
 }
 
 #[cfg(test)]
