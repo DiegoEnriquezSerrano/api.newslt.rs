@@ -235,7 +235,7 @@ impl NewsletterIssue {
         slug: String,
         db_pool: &PgPool,
     ) -> Result<PublicNewsletter, sqlx::Error> {
-        let newsletter = sqlx::query_as!(
+        sqlx::query_as!(
             PublicNewsletter,
             r#"
               SELECT
@@ -261,15 +261,13 @@ impl NewsletterIssue {
             slug
         )
         .fetch_one(db_pool)
-        .await?;
-
-        Ok(newsletter)
+        .await
     }
 
     pub async fn get_public_newsletters(
         db_pool: &PgPool,
     ) -> Result<Vec<PublicNewsletterListItem>, sqlx::Error> {
-        let public_newsletters = sqlx::query_as!(
+        sqlx::query_as!(
             PublicNewsletterListItem,
             r#"
               SELECT
@@ -291,16 +289,14 @@ impl NewsletterIssue {
             "#,
         )
         .fetch_all(db_pool)
-        .await?;
-
-        Ok(public_newsletters)
+        .await
     }
 
     pub async fn get_public_newsletters_by_username(
         username: String,
         db_pool: &PgPool,
     ) -> Result<Vec<PublicNewsletterListItem>, sqlx::Error> {
-        let public_newsletters = sqlx::query_as!(
+        sqlx::query_as!(
             PublicNewsletterListItem,
             r#"
               SELECT
@@ -324,9 +320,7 @@ impl NewsletterIssue {
             username
         )
         .fetch_all(db_pool)
-        .await?;
-
-        Ok(public_newsletters)
+        .await
     }
 
     pub fn validate_for_publish(self) -> Result<Self, String> {
