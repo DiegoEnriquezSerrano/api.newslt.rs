@@ -13,12 +13,14 @@ on:
       - main
 
 env:
-  CARGO_TERM_COLOR: always
-  SQLX_VERSION: 0.8.0
-  SQLX_FEATURES: "rustls,postgres"
-  APP_USER: app
-  APP_USER_PWD: secret
   APP_DB_NAME: newsletter
+  APP_USER_PWD: secret
+  APP_USER: app
+  CARGO_TERM_COLOR: always
+  DATABASE_URL: "postgres://postgres:password@localhost:54321/newsletter"
+  DB_PORT: 54321
+  SQLX_FEATURES: "rustls,postgres"
+  SQLX_VERSION: 0.8.6
 
 jobs:
   test:
@@ -27,18 +29,21 @@ jobs:
     # Service containers to run alongside the `test` container job
     services:
       postgres:
-        # Docker Hub image
-        image: postgres:14
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
           POSTGRES_DB: postgres
+          PGPORT: 54321
+        # Docker Hub image
+        image: postgres:17-alpine
         ports:
-          - 5432:5432
-      redis:
-        image: redis:7
+          - 54321:54321
+      valkey:
+        env:
+          VALKEY_EXTRA_FLAGS: '--port 63791 --save 60 1 --loglevel debug'
+        image: valkey/valkey:8.0-alpine
         ports:
-          - 6379:6379
+          - 63791:63791
     steps:
       # Downloads a copy of the code in your repository before running CI tests
       - name: Check out repository code
@@ -46,45 +51,37 @@ jobs:
         # This is an action that checks out your repository onto the runner, allowing you to run scripts or other actions against your code (such as build and test tools).
         # You should use the checkout action any time your workflow will run against the repository's code.
         uses: actions/checkout@v4
-
       # This GitHub Action installs a Rust toolchain using rustup. It is designed for one-line concise usage and good defaults.
       # It also takes care of caching intermediate build artifacts.
       - name: Install the Rust toolchain
         uses: actions-rust-lang/setup-rust-toolchain@v1
-
       - name: Install sqlx-cli
         run:
           cargo install sqlx-cli
-          --version=${{ env.SQLX_VERSION }}
-          --features ${{ env.SQLX_FEATURES }}
-          --no-default-features
-          --locked
+            --version=${{ env.SQLX_VERSION }}
+            --features ${{ env.SQLX_FEATURES }}
+            --no-default-features
+            --locked
           # The --locked flag can be used to force Cargo to use the packaged Cargo.lock file if it is available.
           # This may be useful for ensuring reproducible builds, to use the exact same set of dependencies that were available when the package was published.
           # It may also be useful if a newer version of a dependency is published that no longer builds on your system, or has other problems
-
       - name: Create app user in Postgres
         run: |
           sudo apt-get install postgresql-client
 
           # Create the application user
           CREATE_QUERY="CREATE USER ${APP_USER} WITH PASSWORD '${APP_USER_PWD}';"
-          PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${CREATE_QUERY}"
+          PGPASSWORD="password" psql -U "postgres" -h "localhost" -p 54321 -c "${CREATE_QUERY}"
 
           # Grant create db privileges to the app user
           GRANT_QUERY="ALTER USER ${APP_USER} CREATEDB;"
-          PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${GRANT_QUERY}"
-
+          PGPASSWORD="password" psql -U "postgres" -h "localhost" -p 54321 -c "${GRANT_QUERY}"
       - name: Migrate database
-        run: |
-          SKIP_DOCKER=true ./scripts/init_db.sh
-
+        run: ./scripts/init_db.sh
       - name: Run tests
         run: cargo test
-
       - name: Check that queries are fresh
         run: cargo sqlx prepare --workspace --check -- --all-targets
-
   # `fmt` container job
   fmt:
     name: Rustfmt
@@ -97,7 +94,6 @@ jobs:
           components: rustfmt
       - name: Enforce formatting
         run: cargo fmt --check
-
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
@@ -111,23 +107,25 @@ jobs:
           components: clippy
       - name: Linting
         run: cargo clippy -- -D warnings
-
   coverage:
     name: Code coverage
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:14
+        image: postgres:17-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
           POSTGRES_DB: postgres
+          PGPORT: 54321
         ports:
-          - 5432:5432
-      redis:
-        image: redis:7
+          - 54321:54321
+      valkey:
+        env:
+          VALKEY_EXTRA_FLAGS: '--port 63791 --save 60 1 --loglevel warning'
+        image: valkey/valkey:8.0-alpine
         ports:
-          - 6379:6379
+          - 63791:63791
     steps:
       - uses: actions/checkout@v4
       - name: Install the Rust toolchain
@@ -146,13 +144,13 @@ jobs:
 
           # Create the application user
           CREATE_QUERY="CREATE USER ${APP_USER} WITH PASSWORD '${APP_USER_PWD}';"
-          PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${CREATE_QUERY}"
+          PGPASSWORD="password" psql -U "postgres" -h "localhost" -p 54321 -c "${CREATE_QUERY}"
 
           # Grant create db privileges to the app user
           GRANT_QUERY="ALTER USER ${APP_USER} CREATEDB;"
-          PGPASSWORD="password" psql -U "postgres" -h "localhost" -c "${GRANT_QUERY}"
+          PGPASSWORD="password" psql -U "postgres" -h "localhost" -p 54321 -c "${GRANT_QUERY}"
       - name: Migrate database
-        run: SKIP_DOCKER=true ./scripts/init_db.sh
+        run: ./scripts/init_db.sh
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Generate code coverage
