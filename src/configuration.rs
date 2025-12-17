@@ -90,6 +90,7 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
         .unwrap_or_else(|_| "local".into())
         .try_into()
         .expect("Failed to parse APP_ENVIRONMENT.");
+    let _ = dotenvy::from_filename(environment.dotenv()).unwrap_or_default();
     let environment_filename = format!("{}.yaml", environment.as_str());
     let settings = config::Config::builder()
         .add_source(config::File::from(
@@ -114,6 +115,7 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
 pub enum Environment {
     Local,
     Production,
+    Test,
 }
 
 impl Environment {
@@ -121,6 +123,15 @@ impl Environment {
         match self {
             Environment::Local => "local",
             Environment::Production => "production",
+            Environment::Test => "test",
+        }
+    }
+
+    pub fn dotenv(&self) -> &'static str {
+        match self {
+            Environment::Local => ".env",
+            Environment::Production => ".env",
+            Environment::Test => ".env.test",
         }
     }
 }
@@ -132,8 +143,9 @@ impl TryFrom<String> for Environment {
         match s.to_lowercase().as_str() {
             "local" => Ok(Self::Local),
             "production" => Ok(Self::Production),
+            "test" => Ok(Self::Test),
             other => Err(format!(
-                "{} is not a supported environment. Use either `local` or `production`.",
+                "{} is not a supported environment. Use either `local`, `test` or `production`.",
                 other
             )),
         }
