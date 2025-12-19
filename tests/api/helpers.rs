@@ -152,7 +152,7 @@ impl TestApp {
     {
         self.api_client
             .put(&format!(
-                "{}/admin/newsletter/{}/publish",
+                "{}/admin/newsletters/{}/publish",
                 &self.address, newsletter_issue_id
             ))
             .json(body)
