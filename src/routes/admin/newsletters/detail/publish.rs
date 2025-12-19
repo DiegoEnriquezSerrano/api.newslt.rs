@@ -17,7 +17,7 @@ struct PublishParams {
     idempotency_key: String,
 }
 
-#[put("/newsletter/{newsletter_issue_id}/publish")]
+#[put("/newsletters/{newsletter_issue_id}/publish")]
 #[tracing::instrument(
   name = "Publish a newsletter issue",
   skip_all,
