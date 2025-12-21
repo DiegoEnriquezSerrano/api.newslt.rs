@@ -1,4 +1,5 @@
 use crate::authentication::reject_anonymous_users;
+use crate::clients::CloudinaryClient;
 use crate::configuration::{DatabaseSettings, Settings};
 use crate::email_client::EmailClient;
 use crate::routes::{admin, health_check, index, login, newsletters, subscriptions, users};
@@ -26,6 +27,7 @@ pub struct Application {
 impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, anyhow::Error> {
         let connection_pool = get_connection_pool(&configuration.database);
+        let cloudinary_client = configuration.cloudinary_client.client();
         let email_client = configuration.email_client.client();
         let address = format!(
             "{}:{}",
@@ -37,6 +39,7 @@ impl Application {
         let server = run(
             listener,
             connection_pool,
+            cloudinary_client,
             email_client,
             configuration.application.base_url,
             configuration.application.hmac_secret,
@@ -67,6 +70,7 @@ pub fn get_connection_pool(configuration: &DatabaseSettings) -> PgPool {
 async fn run(
     listener: TcpListener,
     db_pool: PgPool,
+    cloudinary_client: CloudinaryClient,
     email_client: EmailClient,
     base_url: String,
     hmac_secret: Secret<String>,
@@ -76,6 +80,7 @@ async fn run(
     session_key: String,
 ) -> Result<Server, anyhow::Error> {
     let base_url = Data::new(ApplicationBaseUrl(base_url));
+    let cloudinary_client = Data::new(cloudinary_client);
     let db_pool = Data::new(db_pool);
     let email_client = Data::new(email_client);
     let redis_store = RedisSessionStore::new(redis_uri.expose_secret()).await?;
@@ -139,9 +144,10 @@ async fn run(
             .service(subscriptions::post)
             .service(users::detail::get)
             .service(users::get)
+            .app_data(base_url.clone())
+            .app_data(cloudinary_client.clone())
             .app_data(db_pool.clone())
             .app_data(email_client.clone())
-            .app_data(base_url.clone())
             .app_data(Data::new(HmacSecret(hmac_secret.clone())))
     })
     .listen(listener)?

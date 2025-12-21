@@ -1,3 +1,4 @@
+use crate::clients::CloudinaryClient;
 use crate::domain::SubscriberEmail;
 use crate::email_client::EmailClient;
 use secrecy::{ExposeSecret, Secret};
@@ -35,6 +36,24 @@ pub struct CloudinaryClientSettings {
     pub id: String,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub timeout_milliseconds: u64,
+}
+
+impl CloudinaryClientSettings {
+    pub fn timeout(&self) -> std::time::Duration {
+        std::time::Duration::from_millis(self.timeout_milliseconds)
+    }
+
+    pub fn client(self) -> CloudinaryClient {
+        let timeout = self.timeout();
+
+        CloudinaryClient::new(
+            self.api_key,
+            self.api_secret,
+            self.base_url,
+            self.bucket,
+            timeout,
+        )
+    }
 }
 
 #[derive(Deserialize, Clone)]

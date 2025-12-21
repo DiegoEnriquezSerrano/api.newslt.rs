@@ -12,7 +12,7 @@ pub struct CloudinaryClient {
     pub api_key: String,
     pub api_secret: Secret<String>,
     pub base_url: String,
-    pub bucket_name: String,
+    pub bucket: String,
     pub http_client: Client,
 }
 
@@ -21,7 +21,7 @@ impl CloudinaryClient {
         api_key: String,
         api_secret: Secret<String>,
         base_url: String,
-        bucket_name: String,
+        bucket: String,
         timeout: std::time::Duration,
     ) -> Self {
         let http_client = Client::builder().timeout(timeout).build().unwrap();
@@ -31,7 +31,7 @@ impl CloudinaryClient {
             base_url,
             api_key,
             api_secret,
-            bucket_name,
+            bucket,
         }
     }
 
@@ -42,7 +42,7 @@ impl CloudinaryClient {
         eager: String,
         transformation: String,
     ) -> Result<CloudinaryUploadResponse, actix_web::Error> {
-        let url = format!("{}/v1_1/{}/image/upload", self.base_url, self.bucket_name);
+        let url = format!("{}/v1_1/{}/image/upload", self.base_url, self.bucket);
         let timestamp: u64 = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("Time went backwards")
@@ -179,10 +179,10 @@ mod tests {
         }
     }
 
-    fn bucket_name() -> String {
-        let bucket_name: String = Word().fake();
-        let bucket_name = bucket_name.to_lowercase();
-        bucket_name
+    fn bucket() -> String {
+        let bucket: String = Word().fake();
+        let bucket = bucket.to_lowercase();
+        bucket
     }
 
     fn public_id() -> String {
@@ -210,7 +210,7 @@ mod tests {
             Faker.fake(),
             Secret::new(Faker.fake()),
             base_url,
-            bucket_name(),
+            bucket(),
             std::time::Duration::from_millis(200),
         )
     }
@@ -222,7 +222,7 @@ mod tests {
 
         Mock::given(path(format!(
             "/v1_1/{}/image/upload",
-            cloudinary_client.bucket_name
+            cloudinary_client.bucket
         )))
         .and(method("POST"))
         .and(UploadImageBodyMatcher)
