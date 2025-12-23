@@ -1,0 +1,3 @@
+ALTER TABLE user_profiles
+  ADD COLUMN avatar_url VARCHAR(200) NOT NULL DEFAULT '',
+  ADD COLUMN banner_url VARCHAR(200) NOT NULL DEFAULT '';

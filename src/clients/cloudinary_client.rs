@@ -37,6 +37,38 @@ impl CloudinaryClient {
         }
     }
 
+    pub async fn upload_avatar(
+        &self,
+        file: String,
+        user_id: &Uuid,
+    ) -> Result<CloudinaryUploadResponse, actix_web::Error> {
+        let eager: String = "c_fill,g_auto,ar_1:1,w_450".into();
+        let public_id = format!("user/avatar/{}", user_id);
+        let transformation: String = "f_webp".into();
+        let result = self
+            .upload_image(file, public_id, eager, transformation)
+            .await
+            .map_err(e500)?;
+
+        Ok(result)
+    }
+
+    pub async fn upload_banner(
+        &self,
+        file: String,
+        user_id: &Uuid,
+    ) -> Result<CloudinaryUploadResponse, actix_web::Error> {
+        let eager: String = "c_fill,g_auto,ar_4:1,w_900".into();
+        let public_id = format!("user/banner/{}", user_id);
+        let transformation: String = "f_webp".into();
+        let result = self
+            .upload_image(file, public_id, eager, transformation)
+            .await
+            .map_err(e500)?;
+
+        Ok(result)
+    }
+
     pub async fn upload_newsletter_issue_cover_image(
         &self,
         file: String,

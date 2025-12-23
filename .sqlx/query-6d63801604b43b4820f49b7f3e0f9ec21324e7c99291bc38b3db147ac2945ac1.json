@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n              SELECT\n                avatar_url,\n                banner_url,\n                bio,\n                bio AS \"bio_html!: String\",\n                description,\n                display_name,\n                username,\n                (\n                  SELECT COUNT(*)\n                  FROM newsletter_issues\n                  WHERE published_at IS NOT NULL\n                    AND users.user_id = newsletter_issues.user_id\n                ) as \"total_issues\"\n              FROM users\n              JOIN user_profiles ON users.user_id = user_profiles.user_id\n              WHERE users.user_id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "avatar_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "banner_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "bio",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "bio_html!: String",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "description",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "display_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "username",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "total_issues",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "6d63801604b43b4820f49b7f3e0f9ec21324e7c99291bc38b3db147ac2945ac1"
+}
