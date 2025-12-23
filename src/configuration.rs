@@ -1,4 +1,5 @@
-use crate::clients::CloudinaryClient;
+use crate::clients::cloudinary_client::CloudinaryClient;
+use crate::clients::s3_client::S3Client;
 use crate::domain::SubscriberEmail;
 use crate::email_client::EmailClient;
 use secrecy::{ExposeSecret, Secret};
@@ -13,6 +14,7 @@ pub struct Settings {
     pub cloudinary_client: CloudinaryClientSettings,
     pub database: DatabaseSettings,
     pub email_client: EmailClientSettings,
+    pub s3_client: S3ClientSettings,
     pub hosts: HostnameSettings,
     pub redis_uri: Secret<String>,
 }
@@ -53,6 +55,20 @@ impl CloudinaryClientSettings {
             self.bucket,
             timeout,
         )
+    }
+}
+
+#[derive(Deserialize, Clone)]
+pub struct S3ClientSettings {
+    pub access_key: Option<String>,
+    pub endpoint: String,
+    pub region: String,
+    pub secret_key: Option<String>,
+}
+
+impl S3ClientSettings {
+    pub async fn client(self) -> Result<S3Client, anyhow::Error> {
+        S3Client::new(self.access_key, self.endpoint, self.region, self.secret_key).await
     }
 }
 

@@ -1,5 +1,6 @@
 use crate::authentication::reject_anonymous_users;
-use crate::clients::CloudinaryClient;
+use crate::clients::cloudinary_client::CloudinaryClient;
+use crate::clients::s3_client::S3Client;
 use crate::configuration::{DatabaseSettings, Settings};
 use crate::email_client::EmailClient;
 use crate::routes::{admin, health_check, index, login, newsletters, subscriptions, users};
@@ -28,6 +29,7 @@ impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, anyhow::Error> {
         let connection_pool = get_connection_pool(&configuration.database);
         let cloudinary_client = configuration.cloudinary_client.client();
+        let s3_client = configuration.s3_client.client().await?;
         let email_client = configuration.email_client.client();
         let address = format!(
             "{}:{}",
@@ -41,6 +43,7 @@ impl Application {
             connection_pool,
             cloudinary_client,
             email_client,
+            s3_client,
             configuration.application.base_url,
             configuration.application.hmac_secret,
             configuration.redis_uri,
@@ -72,6 +75,7 @@ async fn run(
     db_pool: PgPool,
     cloudinary_client: CloudinaryClient,
     email_client: EmailClient,
+    s3_client: S3Client,
     base_url: String,
     hmac_secret: Secret<String>,
     redis_uri: Secret<String>,
@@ -84,6 +88,7 @@ async fn run(
     let db_pool = Data::new(db_pool);
     let email_client = Data::new(email_client);
     let redis_store = RedisSessionStore::new(redis_uri.expose_secret()).await?;
+    let s3_client = Data::new(s3_client);
     let secret_key = Key::from(hmac_secret.expose_secret().as_bytes());
 
     let message_store = CookieMessageStore::builder(secret_key.clone()).build();
@@ -148,6 +153,7 @@ async fn run(
             .app_data(cloudinary_client.clone())
             .app_data(db_pool.clone())
             .app_data(email_client.clone())
+            .app_data(s3_client.clone())
             .app_data(Data::new(HmacSecret(hmac_secret.clone())))
     })
     .listen(listener)?

@@ -1,3 +1,2 @@
-mod cloudinary_client;
-
-pub use cloudinary_client::*;
+pub mod cloudinary_client;
+pub mod s3_client;
