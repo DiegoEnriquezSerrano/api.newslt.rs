@@ -75,6 +75,8 @@ impl UserProfile {
             PublicProfileListItem,
             r#"
               SELECT
+                avatar_url,
+                banner_url,
                 description,
                 display_name,
                 username,
@@ -101,6 +103,8 @@ impl UserProfile {
             PublicProfile,
             r#"
               SELECT
+                avatar_url,
+                banner_url,
                 bio,
                 description,
                 display_name,
@@ -283,6 +287,8 @@ pub struct AssociatedUser {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PublicProfile {
+    pub avatar_url: String,
+    pub banner_url: String,
     #[serde(serialize_with = "serialize_bio")]
     pub bio: String,
     pub description: String,
@@ -297,6 +303,8 @@ fn serialize_bio<S: Serializer>(bio: &str, serializer: S) -> Result<S::Ok, S::Er
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PublicProfileListItem {
+    pub avatar_url: String,
+    pub banner_url: String,
     pub description: String,
     pub display_name: String,
     pub username: String,
