@@ -32,6 +32,7 @@ async fn retuns_published_public_newsletters_by_user() {
       "title": "Newsletter title",
       "description": "Newsletter description",
       "content": "## Newsletter content",
+      "cover_image": "",
     }))
     .await;
 

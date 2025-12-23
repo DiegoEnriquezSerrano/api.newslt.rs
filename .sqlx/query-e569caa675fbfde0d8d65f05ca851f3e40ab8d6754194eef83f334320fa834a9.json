@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n              SELECT\n                content,\n                created_at,\n                description,\n                newsletter_issue_id,\n                published_at,\n                slug,\n                title,\n                user_id\n              FROM newsletter_issues\n              WHERE user_id = $1 AND published_at IS NULL\n              ORDER BY created_at DESC\n              LIMIT 10\n            ",
+  "query": "\n              SELECT\n                content,\n                cover_image_url,\n                created_at,\n                description,\n                newsletter_issue_id,\n                published_at,\n                slug,\n                title,\n                user_id\n              FROM newsletter_issues\n              WHERE\n                newsletter_issue_id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -10,36 +10,41 @@
       },
       {
         "ordinal": 1,
+        "name": "cover_image_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 2,
+        "ordinal": 3,
         "name": "description",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "newsletter_issue_id",
         "type_info": "Uuid"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "published_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "slug",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "title",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "user_id",
         "type_info": "Uuid"
       }
@@ -54,11 +59,12 @@
       false,
       false,
       false,
+      false,
       true,
       false,
       false,
       false
     ]
   },
-  "hash": "be7254a979ef1dd7f2d070d13d39ae1bdd59f2374eca2cd8691c3a72e6dbfd8c"
+  "hash": "e569caa675fbfde0d8d65f05ca851f3e40ab8d6754194eef83f334320fa834a9"
 }

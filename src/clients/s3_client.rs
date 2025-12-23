@@ -4,6 +4,7 @@ use s3::BucketConfiguration;
 use s3::bucket::Bucket;
 use s3::bucket_ops::CannedBucketAcl;
 use s3::creds::Credentials;
+use s3::error::S3Error;
 use s3::region::Region;
 use s3::request::ResponseData;
 use uuid::Uuid;
@@ -37,10 +38,7 @@ impl S3Client {
         newsletter_issue_id: &Uuid,
         content: web::Bytes,
     ) -> Result<ResponseData, anyhow::Error> {
-        let path = format!(
-            "{}/images/newsletter/cover/{newsletter_issue_id}.webp",
-            self.endpoint
-        );
+        let path = format!("/newsletter/cover/{newsletter_issue_id}.webp");
         let response: ResponseData = self
             .buckets
             .images
@@ -70,14 +68,16 @@ impl S3Client {
         )
         .context("Failed to initialize new bucket.")?
         .with_path_style();
-        images_bucket = Self::create_if_not_exists(images_bucket).await?;
+        images_bucket = Self::idempotent_bucket_create(images_bucket).await?;
 
         Ok(Buckets {
             images: images_bucket,
         })
     }
 
-    async fn create_if_not_exists(mut bucket: Box<Bucket>) -> Result<Box<Bucket>, anyhow::Error> {
+    async fn idempotent_bucket_create(
+        mut bucket: Box<Bucket>,
+    ) -> Result<Box<Bucket>, anyhow::Error> {
         let bucket_name: &str = &bucket.name();
         let exists: bool = bucket
             .exists()
@@ -98,12 +98,22 @@ impl S3Client {
             None,
         );
 
+        // Handles for race condition when starting app on multiple threads.
+        // e.g. Thread #1 calls 'exists()' and subsequently sends a create request,
+        // meanwhile thread #2 calls 'exists()' before thread #1 create completes
+        // and subsequently sends its own create request as thread #1 responds.
         if !exists {
-            bucket =
-                Bucket::create_with_path_style(bucket_name, bucket.region(), credentials, config)
-                    .await
-                    .context("Failed to get create bucket response.")?
-                    .bucket;
+            match Bucket::create_with_path_style(bucket_name, bucket.region(), credentials, config)
+                .await
+            {
+                Ok(response) => bucket = response.bucket,
+                Err(err) => match err {
+                    // https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
+                    // <Error><Code>BucketAlreadyOwnedByYou</Code>
+                    S3Error::HttpFailWithBody(409, _) => (),
+                    _ => anyhow::bail!("Failed to create non-existent bucket."),
+                },
+            }
         }
 
         Ok(bucket)

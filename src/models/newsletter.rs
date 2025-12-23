@@ -1,16 +1,22 @@
+use crate::clients::cloudinary_client::CloudinaryClient;
+use crate::clients::s3_client::S3Client;
 use crate::domain::newsletter_issue::{Content, Description, Title};
+use crate::domain::{Base64ImageUrl, ImageUrl};
 use crate::models::AssociatedUser;
+use crate::utils::{e500, is_empty_or_whitespace};
 use anyhow::Context;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize, Serializer};
 use sqlx::postgres::PgRow;
 use sqlx::{Executor, PgPool, Postgres, Row, Transaction};
+use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 use voca_rs::strip;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NewsletterIssue {
     pub content: String,
+    pub cover_image_url: String,
     pub created_at: DateTime<Utc>,
     pub description: String,
     pub newsletter_issue_id: Uuid,
@@ -26,6 +32,7 @@ impl TryFrom<PgRow> for NewsletterIssue {
     fn try_from(row: PgRow) -> Result<Self, Self::Error> {
         Ok(Self {
             content: row.try_get("content")?,
+            cover_image_url: row.try_get("cover_image_url")?,
             created_at: row.try_get("created_at")?,
             description: row.try_get("description")?,
             newsletter_issue_id: row.try_get("newsletter_issue_id")?,
@@ -48,6 +55,7 @@ impl NewsletterIssue {
             r#"
               SELECT
                 content,
+                cover_image_url,
                 created_at,
                 description,
                 newsletter_issue_id,
@@ -79,6 +87,7 @@ impl NewsletterIssue {
                 r#"
                   SELECT
                     content,
+                    cover_image_url,
                     created_at,
                     description,
                     newsletter_issue_id,
@@ -108,6 +117,7 @@ impl NewsletterIssue {
             r#"
               SELECT
                 content,
+                cover_image_url,
                 created_at,
                 description,
                 newsletter_issue_id,
@@ -136,6 +146,7 @@ impl NewsletterIssue {
             r#"
               SELECT
                 content,
+                cover_image_url,
                 created_at,
                 description,
                 newsletter_issue_id,
@@ -165,6 +176,7 @@ impl NewsletterIssue {
             r#"
               SELECT
                 content,
+                cover_image_url,
                 created_at,
                 description,
                 newsletter_issue_id,
@@ -330,6 +342,7 @@ impl NewsletterIssue {
 
         Ok(Self {
             content: content.as_ref().to_string(),
+            cover_image_url: self.cover_image_url,
             created_at: self.created_at,
             description: description.as_ref().to_string(),
             newsletter_issue_id: self.newsletter_issue_id,
@@ -339,11 +352,88 @@ impl NewsletterIssue {
             user_id: self.user_id,
         })
     }
+
+    pub fn prepare_cover_image_url(
+        newsletter_issue_id: &Uuid,
+        s3_base_url: String,
+    ) -> Result<String, String> {
+        let image_url = format!("{s3_base_url}/images/newsletter/cover/{newsletter_issue_id}.webp");
+        let image_url = ImageUrl::parse(image_url)?.as_ref().to_string();
+
+        Ok(image_url)
+    }
+
+    pub fn set_cover_image_url(self, s3_base_url: String, is_empty: bool) -> Result<Self, String> {
+        let cover_image_url = if is_empty {
+            String::from("")
+        } else {
+            let timestamp: u64 = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("Time went backwards")
+                .as_secs();
+            format!(
+                "{}?v={timestamp}",
+                Self::prepare_cover_image_url(&self.newsletter_issue_id, s3_base_url)?
+            )
+        };
+
+        Ok(Self {
+            content: self.content,
+            cover_image_url,
+            created_at: self.created_at,
+            description: self.description,
+            newsletter_issue_id: self.newsletter_issue_id,
+            published_at: self.published_at,
+            slug: self.slug,
+            title: self.title,
+            user_id: self.user_id,
+        })
+    }
+
+    pub async fn process_image(
+        self,
+        file: String,
+        s3_client: &S3Client,
+        cloudinary_client: &CloudinaryClient,
+    ) -> Result<Self, actix_web::Error> {
+        Self::validate_and_upload_image(
+            file,
+            &self.newsletter_issue_id,
+            s3_client,
+            cloudinary_client,
+        )
+        .await?;
+
+        Ok(self)
+    }
+
+    pub async fn validate_and_upload_image(
+        image: String,
+        newsletter_issue_id: &Uuid,
+        s3_client: &S3Client,
+        cloudinary_client: &CloudinaryClient,
+    ) -> Result<(), actix_web::Error> {
+        if is_empty_or_whitespace(&image) {
+            return Ok(());
+        }
+
+        let uploaded_image = cloudinary_client
+            .upload_newsletter_issue_cover_image(image, newsletter_issue_id)
+            .await?;
+        let content = cloudinary_client.get_image_as_bytes(uploaded_image).await?;
+        s3_client
+            .put_newsletter_issue_cover_image(newsletter_issue_id, content)
+            .await
+            .map_err(e500)?;
+
+        Ok(())
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NewsletterIssueAPI {
     pub content: String,
+    pub cover_image_url: String,
     pub description: String,
     pub html_content: String,
     pub newsletter_issue_id: Uuid,
@@ -359,6 +449,7 @@ impl From<NewsletterIssue> for NewsletterIssueAPI {
 
         Self {
             content: newsletter_issue.content,
+            cover_image_url: newsletter_issue.cover_image_url,
             description: newsletter_issue.description,
             html_content,
             newsletter_issue_id: newsletter_issue.newsletter_issue_id,
@@ -403,6 +494,8 @@ impl From<NewsletterIssue> for NewsletterIssueEmail {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NewNewsletterIssue {
     pub content: String,
+    pub cover_image_url: String,
+    pub cover_image: String,
     pub description: String,
     pub newsletter_issue_id: Uuid,
     pub slug: String,
@@ -448,6 +541,22 @@ impl NewNewsletterIssue {
         Ok(result)
     }
 
+    pub async fn process_image(
+        self,
+        s3_client: &S3Client,
+        cloudinary_client: &CloudinaryClient,
+    ) -> Result<Self, actix_web::Error> {
+        NewsletterIssue::validate_and_upload_image(
+            self.cover_image.clone(),
+            &self.newsletter_issue_id,
+            s3_client,
+            cloudinary_client,
+        )
+        .await?;
+
+        Ok(self)
+    }
+
     pub async fn insert_newsletter_issue(
         &self,
         user_id: &Uuid,
@@ -458,6 +567,7 @@ impl NewNewsletterIssue {
                 r#"
                   INSERT INTO newsletter_issues (
                     content,
+                    cover_image_url,
                     created_at,
                     description,
                     newsletter_issue_id,
@@ -466,9 +576,10 @@ impl NewNewsletterIssue {
                     title,
                     user_id
                   )
-                  VALUES ($1, now(), $2, $3, NULL, $4, $5, $6)
+                  VALUES ($1, $2, now(), $3, $4, NULL, $5, $6, $7)
                 "#,
                 self.content,
+                self.cover_image_url,
                 self.description,
                 self.newsletter_issue_id,
                 self.slug,
@@ -484,7 +595,9 @@ impl NewNewsletterIssue {
 #[derive(Deserialize)]
 pub struct NewNewsletterIssueData {
     pub content: String,
+    pub cover_image: String,
     pub description: String,
+    pub s3_base_url: String,
     pub title: String,
 }
 
@@ -492,12 +605,27 @@ impl TryFrom<NewNewsletterIssueData> for NewNewsletterIssue {
     type Error = String;
 
     fn try_from(data: NewNewsletterIssueData) -> Result<NewNewsletterIssue, String> {
+        let cover_image = if is_empty_or_whitespace(&data.cover_image) {
+            String::from("")
+        } else {
+            Base64ImageUrl::parse(data.cover_image)?
+                .validate_size_limit(1024 * 1024 * 3)?
+                .as_ref()
+                .to_string()
+        };
         let description = Description::parse_draft(data.description)?;
         let newsletter_issue_id = Uuid::new_v4();
         let title = Title::parse(data.title)?;
+        let cover_image_url = if is_empty_or_whitespace(&cover_image) {
+            String::from("")
+        } else {
+            NewsletterIssue::prepare_cover_image_url(&newsletter_issue_id, data.s3_base_url)?
+        };
 
         Ok(NewNewsletterIssue {
             content: data.content,
+            cover_image_url,
+            cover_image,
             description: description.as_ref().to_string(),
             newsletter_issue_id,
             slug: slug::slugify(title.as_ref()),
@@ -546,6 +674,8 @@ mod tests {
             content: String::from("## Newsletter content"),
             description: String::from("Newsletter description"),
             title: String::from("Ursula Le Guin"),
+            cover_image: String::from(""),
+            s3_base_url: String::from(""),
         };
 
         assert_ok!(NewNewsletterIssue::try_from(test_newsletter_issue));
@@ -557,6 +687,8 @@ mod tests {
             content: String::from("## Newsletter content"),
             description: String::from("Newsletter description"),
             title: String::from("Ursula>Le Guin"),
+            cover_image: String::from(""),
+            s3_base_url: String::from(""),
         };
 
         assert_err!(NewNewsletterIssue::try_from(test_newsletter_issue));
@@ -568,11 +700,14 @@ mod tests {
             content: String::from("## Newsletter content"),
             description: String::from("Newsletter description"),
             title: String::from("Ursula Le Guin"),
+            cover_image: String::from(""),
+            s3_base_url: String::from(""),
         }
         .try_into()
         .unwrap();
         let newsletter_issue_api = NewsletterIssueAPI::from(NewsletterIssue {
             content: new_newsletter_issue.content,
+            cover_image_url: String::from(""),
             created_at: Utc::now(),
             description: new_newsletter_issue.description,
             newsletter_issue_id: new_newsletter_issue.newsletter_issue_id,
@@ -595,11 +730,14 @@ mod tests {
             content: String::from("## Newsletter content"),
             description: String::from("Newsletter description"),
             title: String::from("Ursula Le Guin"),
+            cover_image: String::from(""),
+            s3_base_url: String::from(""),
         }
         .try_into()
         .unwrap();
         let newsletter_issue_email = NewsletterIssueEmail::from(NewsletterIssue {
             content: new_newsletter_issue.content,
+            cover_image_url: String::from(""),
             created_at: Utc::now(),
             description: new_newsletter_issue.description,
             newsletter_issue_id: new_newsletter_issue.newsletter_issue_id,

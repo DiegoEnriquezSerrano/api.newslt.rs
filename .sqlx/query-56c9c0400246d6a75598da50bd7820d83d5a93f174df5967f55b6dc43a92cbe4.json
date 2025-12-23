@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n              SELECT\n                content,\n                created_at,\n                description,\n                newsletter_issue_id,\n                published_at,\n                slug,\n                title,\n                user_id\n              FROM newsletter_issues\n              WHERE user_id = $1 AND published_at IS NOT NULL\n              ORDER BY published_at DESC\n              LIMIT 10\n            ",
+  "query": "\n              SELECT\n                content,\n                cover_image_url,\n                created_at,\n                description,\n                newsletter_issue_id,\n                published_at,\n                slug,\n                title,\n                user_id\n              FROM newsletter_issues\n              WHERE user_id = $1 AND newsletter_issue_id = $2\n              LIMIT 1\n            ",
   "describe": {
     "columns": [
       {
@@ -10,46 +10,53 @@
       },
       {
         "ordinal": 1,
+        "name": "cover_image_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 2,
+        "ordinal": 3,
         "name": "description",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 3,
+        "ordinal": 4,
         "name": "newsletter_issue_id",
         "type_info": "Uuid"
       },
       {
-        "ordinal": 4,
+        "ordinal": 5,
         "name": "published_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 5,
+        "ordinal": 6,
         "name": "slug",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 6,
+        "ordinal": 7,
         "name": "title",
         "type_info": "Varchar"
       },
       {
-        "ordinal": 7,
+        "ordinal": 8,
         "name": "user_id",
         "type_info": "Uuid"
       }
     ],
     "parameters": {
       "Left": [
+        "Uuid",
         "Uuid"
       ]
     },
     "nullable": [
+      false,
       false,
       false,
       false,
@@ -60,5 +67,5 @@
       false
     ]
   },
-  "hash": "34cc11438c72488576c5c0836acd994e1b219ceeaebe7139028d5b7d44a83ac9"
+  "hash": "56c9c0400246d6a75598da50bd7820d83d5a93f174df5967f55b6dc43a92cbe4"
 }
