@@ -121,6 +121,25 @@ impl UserProfile {
         .await
     }
 
+    pub async fn set_avatar(
+        user_id: &Uuid,
+        s3_base_url: &str,
+        pool: &PgPool,
+    ) -> Result<(), actix_web::Error> {
+        let avatar_url = format!("{s3_base_url}/images/user/avatar/{user_id}.webp");
+        let avatar_url = ImageUrl::parse(avatar_url)
+            .map_err(e400)?
+            .as_ref()
+            .to_string();
+
+        Self::update_avatar(user_id, &avatar_url, pool)
+            .await
+            .context("Failed to update user avatar.")
+            .map_err(e500)?;
+
+        Ok(())
+    }
+
     pub async fn set_banner(
         user_id: &Uuid,
         s3_base_url: &str,
@@ -180,6 +199,32 @@ impl UserProfile {
             self.description,
             self.display_name,
             self.user_id
+        )
+        .execute(db_pool)
+        .await?;
+
+        Ok(())
+    }
+
+    async fn update_avatar(
+        user_id: &Uuid,
+        avatar_url: &String,
+        db_pool: &PgPool,
+    ) -> Result<(), sqlx::Error> {
+        let timestamp: u64 = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_secs();
+        let avatar_url = format!("{avatar_url}?v={timestamp}");
+
+        sqlx::query!(
+            r#"
+              UPDATE user_profiles
+              SET avatar_url = $1
+              WHERE user_id = $2
+            "#,
+            avatar_url,
+            user_id
         )
         .execute(db_pool)
         .await?;

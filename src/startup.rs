@@ -140,6 +140,7 @@ async fn run(
                     .service(admin::user::get)
                     .service(admin::user::put)
                     .service(admin::user::banner::put)
+                    .service(admin::user::avatar::put)
                     .service(admin::password::put),
             )
             .service(health_check::get)
