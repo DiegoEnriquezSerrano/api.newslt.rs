@@ -1,6 +1,10 @@
+use crate::domain::ImageUrl;
 use crate::domain::user_profile::{Description, DisplayName};
+use crate::utils::{e400, e500};
+use anyhow::Context;
 use serde::{Deserialize, Serialize, Serializer};
 use sqlx::{Executor, PgPool, Postgres, Transaction, Type};
+use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -21,6 +25,18 @@ impl UserProfile {
         }
     }
 
+    pub fn validate(self) -> Result<UserProfile, String> {
+        let description = Description::parse(self.description)?.as_ref().to_string();
+        let display_name = DisplayName::parse(self.display_name)?.as_ref().to_string();
+
+        Ok(Self {
+            bio: self.bio,
+            description,
+            display_name,
+            user_id: self.user_id,
+        })
+    }
+
     pub async fn find_user_profile_api_by_user_id(
         user_id: Uuid,
         pool: &PgPool,
@@ -29,6 +45,7 @@ impl UserProfile {
             UserProfileAPI,
             r#"
               SELECT
+                banner_url,
                 bio,
                 bio AS "bio_html!: String",
                 description,
@@ -103,16 +120,23 @@ impl UserProfile {
         .await
     }
 
-    pub fn validate(self) -> Result<UserProfile, String> {
-        let description = Description::parse(self.description)?.as_ref().to_string();
-        let display_name = DisplayName::parse(self.display_name)?.as_ref().to_string();
+    pub async fn set_banner(
+        user_id: &Uuid,
+        s3_base_url: &str,
+        pool: &PgPool,
+    ) -> Result<(), actix_web::Error> {
+        let banner_url = format!("{s3_base_url}/images/user/banner/{user_id}.webp");
+        let banner_url = ImageUrl::parse(banner_url)
+            .map_err(e400)?
+            .as_ref()
+            .to_string();
 
-        Ok(Self {
-            bio: self.bio,
-            description,
-            display_name,
-            user_id: self.user_id,
-        })
+        Self::update_banner(user_id, &banner_url, pool)
+            .await
+            .context("Failed to update user banner.")
+            .map_err(e500)?;
+
+        Ok(())
     }
 
     pub async fn insert(
@@ -161,10 +185,37 @@ impl UserProfile {
 
         Ok(())
     }
+
+    async fn update_banner(
+        user_id: &Uuid,
+        banner_url: &String,
+        db_pool: &PgPool,
+    ) -> Result<(), sqlx::Error> {
+        let timestamp: u64 = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_secs();
+        let banner_url = format!("{banner_url}?v={timestamp}");
+
+        sqlx::query!(
+            r#"
+              UPDATE user_profiles
+              SET banner_url = $1
+              WHERE user_id = $2
+            "#,
+            banner_url,
+            user_id
+        )
+        .execute(db_pool)
+        .await?;
+
+        Ok(())
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UserProfileAPI {
+    pub banner_url: String,
     pub bio: String,
     #[serde(serialize_with = "serialize_bio")]
     pub bio_html: String,
@@ -176,6 +227,7 @@ pub struct UserProfileAPI {
 
 #[derive(Serialize, Deserialize, Debug, Type)]
 pub struct AssociatedUser {
+    pub banner_url: String,
     pub description: String,
     pub display_name: String,
     pub username: String,
