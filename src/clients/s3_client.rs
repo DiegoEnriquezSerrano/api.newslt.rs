@@ -10,9 +10,8 @@ use s3::request::ResponseData;
 use uuid::Uuid;
 
 pub struct S3Client {
-    pub buckets: Buckets,
     pub endpoint: String,
-    pub region: String,
+    buckets: Buckets,
 }
 
 impl S3Client {
@@ -23,14 +22,9 @@ impl S3Client {
         secret_key: Option<String>,
     ) -> Result<Self, anyhow::Error> {
         let buckets =
-            Self::initialize_buckets(region.clone(), endpoint.clone(), access_key, secret_key)
-                .await?;
+            Self::initialize_buckets(region, endpoint.clone(), access_key, secret_key).await?;
 
-        Ok(Self {
-            buckets,
-            endpoint,
-            region,
-        })
+        Ok(Self { buckets, endpoint })
     }
 
     pub async fn put_newsletter_issue_cover_image(
@@ -39,6 +33,22 @@ impl S3Client {
         content: web::Bytes,
     ) -> Result<ResponseData, anyhow::Error> {
         let path = format!("/newsletter/cover/{newsletter_issue_id}.webp");
+        let response: ResponseData = self
+            .buckets
+            .images
+            .put_object_with_content_type(path, &content[..], "image/webp")
+            .await
+            .context("Failed to store image.")?;
+
+        Ok(response)
+    }
+
+    pub async fn put_user_profile_banner(
+        &self,
+        user_id: &Uuid,
+        content: web::Bytes,
+    ) -> Result<ResponseData, anyhow::Error> {
+        let path = format!("/user/banner/{user_id}.webp");
         let response: ResponseData = self
             .buckets
             .images
