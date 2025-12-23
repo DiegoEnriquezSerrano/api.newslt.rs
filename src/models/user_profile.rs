@@ -45,6 +45,7 @@ impl UserProfile {
             UserProfileAPI,
             r#"
               SELECT
+                avatar_url,
                 banner_url,
                 bio,
                 bio AS "bio_html!: String",
@@ -215,6 +216,7 @@ impl UserProfile {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UserProfileAPI {
+    pub avatar_url: String,
     pub banner_url: String,
     pub bio: String,
     #[serde(serialize_with = "serialize_bio")]
@@ -227,6 +229,7 @@ pub struct UserProfileAPI {
 
 #[derive(Serialize, Deserialize, Debug, Type)]
 pub struct AssociatedUser {
+    pub avatar_url: String,
     pub banner_url: String,
     pub description: String,
     pub display_name: String,

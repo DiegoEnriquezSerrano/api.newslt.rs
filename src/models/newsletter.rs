@@ -260,6 +260,7 @@ impl NewsletterIssue {
                 newsletter_issues.title,
                 (
                   users.username,
+                  user_profiles.avatar_url,
                   user_profiles.banner_url,
                   user_profiles.display_name,
                   user_profiles.description
@@ -292,6 +293,7 @@ impl NewsletterIssue {
                 newsletter_issues.title,
                 (
                   users.username,
+                  user_profiles.avatar_url,
                   user_profiles.banner_url,
                   user_profiles.display_name,
                   user_profiles.description
@@ -322,6 +324,7 @@ impl NewsletterIssue {
                 newsletter_issues.title,
                 (
                   users.username,
+                  user_profiles.avatar_url,
                   user_profiles.banner_url,
                   user_profiles.display_name,
                   user_profiles.description
