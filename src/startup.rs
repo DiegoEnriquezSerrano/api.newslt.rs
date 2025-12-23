@@ -139,6 +139,7 @@ async fn run(
                     .service(admin::newsletters::detail::publish::put)
                     .service(admin::user::get)
                     .service(admin::user::put)
+                    .service(admin::user::banner::put)
                     .service(admin::password::put),
             )
             .service(health_check::get)

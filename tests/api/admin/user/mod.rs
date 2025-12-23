@@ -1,1 +1,2 @@
+mod banner;
 mod index;
