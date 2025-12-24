@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                  UPDATE newsletter_issues\n                  SET content = $1,\n                      cover_image_url = $2,\n                      description = $3,\n                      title = $4\n                  WHERE newsletter_issue_id = $5\n                      AND user_id = $6\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e0938472c40cb6abda90d93c3aaf68908c0c6970c9d5a4932c3b80dc1d917023"
+}

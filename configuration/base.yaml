@@ -3,6 +3,9 @@ application:
   host: 0.0.0.0
   hmac_secret: "super-long-and-secret-random-key-needed-to-verify-message-integrity"
   session_key: "newsletter_api_key"
+cloudinary_client:
+  base_url: "https://api.cloudinary.com"
+  timeout_milliseconds: 30000
 database:
   host: "127.0.0.1"
   port: 5432

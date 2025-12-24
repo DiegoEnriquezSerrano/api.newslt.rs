@@ -40,10 +40,21 @@ jobs:
           - 54321:54321
       valkey:
         env:
-          VALKEY_EXTRA_FLAGS: '--port 63791 --save 60 1 --loglevel debug'
+          VALKEY_EXTRA_FLAGS: "--port 63791 --save 60 1 --loglevel debug"
         image: valkey/valkey:8.0-alpine
         ports:
           - 63791:63791
+      rustfs:
+        env:
+          RUSTFS_ACCESS_KEY: S3SecretKeyx123456789
+          RUSTFS_ADDRESS: "0.0.0.0:9002"
+          RUSTFS_CONSOLE_ENABLE: false
+          RUSTFS_CORS_ALLOWED_ORIGINS: "*"
+          RUSTFS_REGION: global
+          RUSTFS_SECRET_KEY: S3AccessKey
+        image: rustfs/rustfs:1.0.0-alpha.76
+        ports:
+          - 9002:9002
     steps:
       # Downloads a copy of the code in your repository before running CI tests
       - name: Check out repository code
@@ -58,10 +69,10 @@ jobs:
       - name: Install sqlx-cli
         run:
           cargo install sqlx-cli
-            --version=${{ env.SQLX_VERSION }}
-            --features ${{ env.SQLX_FEATURES }}
-            --no-default-features
-            --locked
+          --version=${{ env.SQLX_VERSION }}
+          --features ${{ env.SQLX_FEATURES }}
+          --no-default-features
+          --locked
           # The --locked flag can be used to force Cargo to use the packaged Cargo.lock file if it is available.
           # This may be useful for ensuring reproducible builds, to use the exact same set of dependencies that were available when the package was published.
           # It may also be useful if a newer version of a dependency is published that no longer builds on your system, or has other problems
@@ -122,10 +133,21 @@ jobs:
           - 54321:54321
       valkey:
         env:
-          VALKEY_EXTRA_FLAGS: '--port 63791 --save 60 1 --loglevel warning'
+          VALKEY_EXTRA_FLAGS: "--port 63791 --save 60 1 --loglevel warning"
         image: valkey/valkey:8.0-alpine
         ports:
           - 63791:63791
+      rustfs:
+        env:
+          RUSTFS_ACCESS_KEY: S3SecretKeyx123456789
+          RUSTFS_ADDRESS: "0.0.0.0:9002"
+          RUSTFS_CONSOLE_ENABLE: false
+          RUSTFS_CORS_ALLOWED_ORIGINS: "*"
+          RUSTFS_REGION: global
+          RUSTFS_SECRET_KEY: S3AccessKey
+        image: rustfs/rustfs:1.0.0-alpha.76
+        ports:
+          - 9002:9002
     steps:
       - uses: actions/checkout@v4
       - name: Install the Rust toolchain

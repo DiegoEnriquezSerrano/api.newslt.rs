@@ -1,3 +1,5 @@
+use crate::clients::cloudinary_client::CloudinaryClient;
+use crate::clients::s3_client::S3Client;
 use crate::domain::SubscriberEmail;
 use crate::email_client::EmailClient;
 use secrecy::{ExposeSecret, Secret};
@@ -9,8 +11,10 @@ use std::convert::{TryFrom, TryInto};
 #[derive(Deserialize, Clone)]
 pub struct Settings {
     pub application: ApplicationSettings,
+    pub cloudinary_client: CloudinaryClientSettings,
     pub database: DatabaseSettings,
     pub email_client: EmailClientSettings,
+    pub s3_client: S3ClientSettings,
     pub hosts: HostnameSettings,
     pub redis_uri: Secret<String>,
 }
@@ -23,6 +27,49 @@ pub struct ApplicationSettings {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub session_key: String,
+}
+
+#[derive(Deserialize, Clone)]
+pub struct CloudinaryClientSettings {
+    pub api_key: String,
+    pub api_secret: Secret<String>,
+    pub base_url: String,
+    pub bucket: String,
+    pub id: String,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub timeout_milliseconds: u64,
+}
+
+impl CloudinaryClientSettings {
+    pub fn timeout(&self) -> std::time::Duration {
+        std::time::Duration::from_millis(self.timeout_milliseconds)
+    }
+
+    pub fn client(self) -> CloudinaryClient {
+        let timeout = self.timeout();
+
+        CloudinaryClient::new(
+            self.api_key,
+            self.api_secret,
+            self.base_url,
+            self.bucket,
+            timeout,
+        )
+    }
+}
+
+#[derive(Deserialize, Clone)]
+pub struct S3ClientSettings {
+    pub access_key: Option<String>,
+    pub endpoint: String,
+    pub region: String,
+    pub secret_key: Option<String>,
+}
+
+impl S3ClientSettings {
+    pub async fn client(self) -> Result<S3Client, anyhow::Error> {
+        S3Client::new(self.access_key, self.endpoint, self.region, self.secret_key).await
+    }
 }
 
 #[derive(Deserialize, Clone)]

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n              UPDATE user_profiles\n              SET banner_url = $1\n              WHERE user_id = $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "885c1819b08e4634e9f4785b90273607f1772f4bc92d908a939571e522bbdeda"
+}

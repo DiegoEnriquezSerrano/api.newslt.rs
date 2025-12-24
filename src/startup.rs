@@ -1,4 +1,6 @@
 use crate::authentication::reject_anonymous_users;
+use crate::clients::cloudinary_client::CloudinaryClient;
+use crate::clients::s3_client::S3Client;
 use crate::configuration::{DatabaseSettings, Settings};
 use crate::email_client::EmailClient;
 use crate::routes::{admin, health_check, index, login, newsletters, subscriptions, users};
@@ -26,6 +28,8 @@ pub struct Application {
 impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, anyhow::Error> {
         let connection_pool = get_connection_pool(&configuration.database);
+        let cloudinary_client = configuration.cloudinary_client.client();
+        let s3_client = configuration.s3_client.client().await?;
         let email_client = configuration.email_client.client();
         let address = format!(
             "{}:{}",
@@ -37,7 +41,9 @@ impl Application {
         let server = run(
             listener,
             connection_pool,
+            cloudinary_client,
             email_client,
+            s3_client,
             configuration.application.base_url,
             configuration.application.hmac_secret,
             configuration.redis_uri,
@@ -67,7 +73,9 @@ pub fn get_connection_pool(configuration: &DatabaseSettings) -> PgPool {
 async fn run(
     listener: TcpListener,
     db_pool: PgPool,
+    cloudinary_client: CloudinaryClient,
     email_client: EmailClient,
+    s3_client: S3Client,
     base_url: String,
     hmac_secret: Secret<String>,
     redis_uri: Secret<String>,
@@ -76,9 +84,11 @@ async fn run(
     session_key: String,
 ) -> Result<Server, anyhow::Error> {
     let base_url = Data::new(ApplicationBaseUrl(base_url));
+    let cloudinary_client = Data::new(cloudinary_client);
     let db_pool = Data::new(db_pool);
     let email_client = Data::new(email_client);
     let redis_store = RedisSessionStore::new(redis_uri.expose_secret()).await?;
+    let s3_client = Data::new(s3_client);
     let secret_key = Key::from(hmac_secret.expose_secret().as_bytes());
 
     let message_store = CookieMessageStore::builder(secret_key.clone()).build();
@@ -125,9 +135,12 @@ async fn run(
                     .service(admin::newsletters::drafts::get)
                     .service(admin::newsletters::detail::get)
                     .service(admin::newsletters::detail::put)
+                    .service(admin::newsletters::detail::cover_image::put)
                     .service(admin::newsletters::detail::publish::put)
                     .service(admin::user::get)
                     .service(admin::user::put)
+                    .service(admin::user::banner::put)
+                    .service(admin::user::avatar::put)
                     .service(admin::password::put),
             )
             .service(health_check::get)
@@ -139,10 +152,13 @@ async fn run(
             .service(subscriptions::post)
             .service(users::detail::get)
             .service(users::get)
+            .app_data(base_url.clone())
+            .app_data(cloudinary_client.clone())
             .app_data(db_pool.clone())
             .app_data(email_client.clone())
-            .app_data(base_url.clone())
+            .app_data(s3_client.clone())
             .app_data(Data::new(HmacSecret(hmac_secret.clone())))
+            .app_data(web::JsonConfig::default().limit(1024 * 1024 * 50))
     })
     .listen(listener)?
     .run();

@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n              UPDATE user_profiles\n              SET avatar_url = $1\n              WHERE user_id = $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e69850969c75a98b8891ffaaff3fd6d9eb14f5759ce1953391d6dafb62d38570"
+}

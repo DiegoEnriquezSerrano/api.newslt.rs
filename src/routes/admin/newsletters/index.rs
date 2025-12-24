@@ -1,4 +1,6 @@
 use crate::authentication::UserId;
+use crate::clients::cloudinary_client::CloudinaryClient;
+use crate::clients::s3_client::S3Client;
 use crate::models::{
     NewNewsletterIssue, NewNewsletterIssueData, NewsletterIssue, NewsletterIssueAPI,
 };
@@ -36,27 +38,32 @@ pub async fn get(
 }
 
 #[derive(Deserialize)]
-pub struct PublishNewsletterParams {
+pub struct CreateNewsletterParams {
     content: String,
+    cover_image: String,
     description: String,
     title: String,
 }
 
 #[post("/newsletters")]
 #[tracing::instrument(
-    name = "Publish a newsletter issue",
+    name = "Creating a newsletter issue",
     skip_all,
     fields(user_id=%&*user_id)
 )]
 pub async fn post(
-    params: web::Json<PublishNewsletterParams>,
+    params: web::Json<CreateNewsletterParams>,
     pool: web::Data<PgPool>,
     user_id: web::ReqData<UserId>,
+    s3_client: web::Data<S3Client>,
+    cloudinary_client: web::Data<CloudinaryClient>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let user_id = user_id.into_inner();
     let new_newsletter_issue: NewNewsletterIssue = NewNewsletterIssueData {
         content: params.0.content,
+        cover_image: params.0.cover_image,
         description: params.0.description,
+        s3_base_url: s3_client.endpoint.clone(),
         title: params.0.title,
     }
     .try_into()
@@ -70,6 +77,8 @@ pub async fn post(
         .validate(&user_id, &mut transaction)
         .await
         .map_err(e400)?
+        .process_image(s3_client.get_ref(), cloudinary_client.get_ref())
+        .await?
         .insert_newsletter_issue(&user_id, &mut transaction)
         .await
         .context("Failed to store newsletter issue details.")

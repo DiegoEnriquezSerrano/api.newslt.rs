@@ -16,6 +16,7 @@ async fn publish_newsletters_returns_400_for_invalid_idempotency_keys() {
       "title": "Newsletter title",
       "description": "Newsletter description",
       "content": "<p>Newsletter body as HTML</p>",
+      "cover_image": "",
     }))
     .await;
 
@@ -64,6 +65,7 @@ async fn newsletters_are_delivered_to_confirmed_subscribers() {
           "title": "Newsletter title",
           "description": "Newsletter description",
           "content": "## Newsletter body as markdown",
+          "cover_image": "",
         }))
         .await;
     assert_eq!(201, response.status().as_u16());
@@ -114,6 +116,7 @@ async fn newsletters_are_not_delivered_to_unconfirmed_subscribers() {
         "title": "Newsletter title",
         "description": "Newsletter description as plain text",
         "content": "## Newsletter body as markdown",
+        "cover_image": "",
     });
     let response = app
         .post_admin_create_newsletter(&newsletter_request_body)
@@ -162,6 +165,7 @@ async fn newsletter_publishing_is_idempotent() {
           "title": "Newsletter title",
           "description": "Newsletter description",
           "content": "## Newsletter body as markdown",
+          "cover_image": "",
         }))
         .await;
     assert_eq!(201, response.status().as_u16());
@@ -217,6 +221,7 @@ async fn concurrent_form_submission_is_handled_gracefully() {
       "title": "Newsletter title",
       "description": "Newsletter description",
       "content": "<p>Newsletter body as HTML</p>",
+      "cover_image": "",
     }))
     .await;
 
@@ -277,6 +282,7 @@ async fn newsletters_are_not_delivered_to_anothers_confirmed_subscribers() {
       "title": "Newsletter title",
       "description": "Newsletter description",
       "content": "<p>Newsletter body as HTML</p>",
+      "cover_image": "",
     }))
     .await;
 
@@ -316,6 +322,7 @@ async fn publish_newsletters_returns_422_for_empty_description() {
       "title": "Newsletter title",
       "description": "",
       "content": "<p>Newsletter body as HTML</p>",
+      "cover_image": "",
     }))
     .await;
 
@@ -348,6 +355,7 @@ async fn publish_newsletters_returns_422_for_empty_content() {
       "title": "Newsletter title",
       "description": "Newsletter description",
       "content": "",
+      "cover_image": "",
     }))
     .await;
 

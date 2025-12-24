@@ -22,6 +22,21 @@ services:
       - 6379:6379
     volumes:
       - newsletter-valkey:/data
+  newsletter-rustfs:
+    command: /data
+    env_file: .env
+    expose:
+      - 9000
+      - 9001
+    image: rustfs/rustfs:1.0.0-alpha.76
+    networks:
+      - newsletter-net
+    ports:
+      - 9000:9000
+      - 9001:9001
+    restart: unless-stopped
+    volumes:
+      - newsletter-rustfs:/data
   newsletter-test-db:
     image: postgres:17-alpine
     env_file: .env.test
@@ -41,9 +56,23 @@ services:
       - newsletter-test-net
     ports:
       - 63791:63791
+  newsletter-test-rustfs:
+    command: /data
+    env_file: .env.test
+    expose:
+      - 9002
+      - 9003
+    image: rustfs/rustfs:1.0.0-alpha.76
+    networks:
+      - newsletter-test-net
+    ports:
+      - 9002:9002
+      - 9003:9003
+    restart: unless-stopped
 volumes:
   newsletter-db:
   newsletter-valkey:
+  newsletter-rustfs:
 networks:
   newsletter-net:
     driver: bridge

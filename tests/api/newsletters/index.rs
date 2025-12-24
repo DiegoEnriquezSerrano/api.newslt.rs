@@ -28,12 +28,14 @@ async fn published_timeline_newsletters_are_listed_by_published_at() {
       "title": "Newsletter title 0",
       "description": "Newsletter description 0",
       "content": "## Newsletter content 0",
+      "cover_image": "",
     }))
     .await;
     app.post_admin_create_newsletter(&serde_json::json!({
       "title": "Newsletter title 1",
       "description": "Newsletter description 1",
       "content": "## Newsletter content 1",
+      "cover_image": "",
     }))
     .await;
 
@@ -84,6 +86,7 @@ async fn all_users_published_timeline_newsletters_are_listed() {
       "title": "Newsletter title 0",
       "description": "Newsletter description 0",
       "content": "## Newsletter content 0",
+      "cover_image": "",
     }))
     .await;
 
@@ -137,6 +140,7 @@ async fn all_users_published_timeline_newsletters_are_listed() {
       "title": "Newsletter title 1",
       "description": "Newsletter description 1",
       "content": "## Newsletter content 1",
+      "cover_image": "",
     }))
     .await;
 

@@ -22,6 +22,7 @@ async fn existing_path_params_return_newsletter() {
       "title": "Newsletter title",
       "description": "Newsletter description",
       "content": "## Newsletter body as HTML",
+      "cover_image": "",
     }))
     .await;
 

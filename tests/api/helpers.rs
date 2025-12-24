@@ -1,6 +1,7 @@
 use fake::Fake;
 use fake::faker::internet::en::SafeEmail;
 use fake::faker::name::en::Name;
+use newsletter_api::clients::cloudinary_client::CloudinaryClient;
 use newsletter_api::configuration::{DatabaseSettings, get_configuration};
 use newsletter_api::email_client::EmailClient;
 use newsletter_api::issue_delivery_worker::{ExecutionOutcome, try_execute_task};
@@ -34,6 +35,8 @@ pub struct TestApp {
     pub email_server: MockServer,
     pub test_user: TestUser,
     pub api_client: reqwest::Client,
+    pub cloudinary_client: CloudinaryClient,
+    pub cloudinary_server: MockServer,
     pub email_client: EmailClient,
 }
 
@@ -180,6 +183,25 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 
+    pub async fn put_admin_update_newsletter_issue_cover_image<Body>(
+        &self,
+        newsletter_issue_id: &Uuid,
+        body: &Body,
+    ) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
+        self.api_client
+            .put(&format!(
+                "{}/admin/newsletter/{}/cover_image",
+                &self.address, newsletter_issue_id
+            ))
+            .json(body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
     pub async fn get_admin_user(&self) -> reqwest::Response {
         self.api_client
             .get(&format!("{}/admin/user", &self.address))
@@ -194,6 +216,30 @@ impl TestApp {
     {
         self.api_client
             .put(&format!("{}/admin/user", &self.address))
+            .json(body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub async fn put_admin_update_user_profile_avatar<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
+        self.api_client
+            .put(&format!("{}/admin/user/avatar", &self.address))
+            .json(body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+
+    pub async fn put_admin_update_user_profile_banner<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
+        self.api_client
+            .put(&format!("{}/admin/user/banner", &self.address))
             .json(body)
             .send()
             .await
@@ -336,6 +382,7 @@ pub async fn spawn_app() -> TestApp {
 
     // Launch a mock server to stand in for Postmark's API
     let email_server = MockServer::start().await;
+    let cloudinary_server = MockServer::start().await;
 
     unsafe {
         std::env::set_var("APP_ENVIRONMENT", "test");
@@ -350,6 +397,7 @@ pub async fn spawn_app() -> TestApp {
         c.application.port = 0;
         // Use the mock server as email API
         c.email_client.base_url = email_server.uri();
+        c.cloudinary_client.base_url = cloudinary_server.uri();
         c
     };
 
@@ -376,6 +424,8 @@ pub async fn spawn_app() -> TestApp {
     let test_app = TestApp {
         address: format!("http://localhost:{}", application_port),
         port: application_port,
+        cloudinary_client: configuration.cloudinary_client.client(),
+        cloudinary_server,
         db_pool,
         email_server,
         test_user,

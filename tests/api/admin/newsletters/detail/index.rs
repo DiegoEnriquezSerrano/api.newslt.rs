@@ -10,7 +10,8 @@ async fn unauthenticated_user_cannot_fetch_a_newsletter() {
     app.post_admin_create_newsletter(&serde_json::json!({
       "title": "Newsletter title",
       "description": "Newsletter description",
-      "content": "## Newsletter content"
+      "content": "## Newsletter content",
+      "cover_image": "",
     }))
     .await;
 
@@ -31,7 +32,8 @@ async fn authenticated_user_can_fetch_a_newsletter() {
     app.post_admin_create_newsletter(&serde_json::json!({
       "title": "Newsletter title",
       "description": "Newsletter description",
-      "content": "## Newsletter content"
+      "content": "## Newsletter content",
+      "cover_image": "",
     }))
     .await;
 
@@ -55,7 +57,8 @@ async fn authenticated_user_cannot_view_anothers_newsletter() {
     app.post_admin_create_newsletter(&serde_json::json!({
       "title": "Newsletter title",
       "description": "Newsletter description",
-      "content": "## Newsletter content"
+      "content": "## Newsletter content",
+      "cover_image": "",
     }))
     .await;
 
@@ -94,6 +97,7 @@ async fn authenticated_user_can_update_a_newsletter() {
       "title": "Newsletter title",
       "description": "Newsletter description",
       "content": "## Newsletter content",
+      "cover_image": "",
     }))
     .await;
 
@@ -129,6 +133,7 @@ async fn unauthenticated_user_cannot_update_a_newsletter() {
       "title": "Newsletter title",
       "description": "Newsletter description",
       "content": "## Newsletter content",
+      "cover_image": "",
     }))
     .await;
 
@@ -171,6 +176,7 @@ async fn newsletter_update_returns_400_for_missing_fields() {
       "title": "Newsletter title",
       "description": "Newsletter description",
       "content": "## Newsletter content",
+      "cover_image": "",
     }))
     .await;
 
@@ -222,6 +228,7 @@ async fn draft_newsletter_update_returns_400_for_invalid_fields() {
       "title": "Newsletter title",
       "description": "Newsletter description",
       "content": "## Newsletter content",
+      "cover_image": "",
     }))
     .await;
 
@@ -301,6 +308,7 @@ async fn newsletter_update_returns_400_for_invalid_fields() {
       "title": "Newsletter title",
       "description": "Newsletter description",
       "content": "## Newsletter content",
+      "cover_image": "",
     }))
     .await;
 
@@ -409,6 +417,7 @@ async fn authenticated_user_cannot_update_anothers_newsletter() {
       "title": "Newsletter title",
       "description": "Newsletter description",
       "content": "## Newsletter content",
+      "cover_image": "",
     }))
     .await;
 
