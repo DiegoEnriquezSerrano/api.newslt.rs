@@ -1,0 +1,59 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n              SELECT\n                newsletter_issues.content,\n                newsletter_issues.cover_image_url,\n                newsletter_issues.description,\n                newsletter_issues.published_at,\n                newsletter_issues.slug,\n                newsletter_issues.title,\n                (\n                  user_profiles.avatar_url,\n                  user_profiles.banner_url,\n                  user_profiles.description,\n                  user_profiles.display_name,\n                  users.username\n                ) AS \"user!: AssociatedUser\"\n              FROM newsletter_issues\n              JOIN users ON newsletter_issues.user_id = users.user_id\n              JOIN user_profiles ON newsletter_issues.user_id = user_profiles.user_id\n              WHERE newsletter_issues.published_at IS NOT NULL\n                AND users.username = $1\n                AND newsletter_issues.slug = $2\n              LIMIT 1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "cover_image_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "published_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "slug",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "user!: AssociatedUser",
+        "type_info": "Record"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "6a95d4c66ad4fbda039796bd433df695dadec01d90452b3c85fba50375ed5577"
+}

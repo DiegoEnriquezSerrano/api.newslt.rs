@@ -244,6 +244,11 @@ impl NewsletterIssue {
         Ok(self.newsletter_issue_id)
     }
 
+    // Note - For serializing nested records sqlx allows returning
+    // sequence of values, which are then mapped to the key names in
+    // order. This means the order of the columns in the query must
+    // reflect the order in the struct definition. For casted values,
+    // sqlx only checks that the column exists.
     pub async fn find_public_newsletter(
         username: String,
         slug: String,
@@ -254,16 +259,17 @@ impl NewsletterIssue {
             r#"
               SELECT
                 newsletter_issues.content,
+                newsletter_issues.cover_image_url,
                 newsletter_issues.description,
                 newsletter_issues.published_at,
                 newsletter_issues.slug,
                 newsletter_issues.title,
                 (
-                  users.username,
                   user_profiles.avatar_url,
                   user_profiles.banner_url,
+                  user_profiles.description,
                   user_profiles.display_name,
-                  user_profiles.description
+                  users.username
                 ) AS "user!: AssociatedUser"
               FROM newsletter_issues
               JOIN users ON newsletter_issues.user_id = users.user_id
@@ -287,16 +293,17 @@ impl NewsletterIssue {
             PublicNewsletterListItem,
             r#"
               SELECT
+                newsletter_issues.cover_image_url,
                 newsletter_issues.description,
                 newsletter_issues.published_at,
                 newsletter_issues.slug,
                 newsletter_issues.title,
                 (
-                  users.username,
                   user_profiles.avatar_url,
                   user_profiles.banner_url,
+                  user_profiles.description,
                   user_profiles.display_name,
-                  user_profiles.description
+                  users.username
                 ) AS "user!: AssociatedUser"
               FROM newsletter_issues
               JOIN users ON newsletter_issues.user_id = users.user_id
@@ -318,16 +325,17 @@ impl NewsletterIssue {
             PublicNewsletterListItem,
             r#"
               SELECT
+                newsletter_issues.cover_image_url,
                 newsletter_issues.description,
                 newsletter_issues.published_at,
                 newsletter_issues.slug,
                 newsletter_issues.title,
                 (
-                  users.username,
                   user_profiles.avatar_url,
                   user_profiles.banner_url,
+                  user_profiles.description,
                   user_profiles.display_name,
-                  user_profiles.description
+                  users.username
                 ) AS "user!: AssociatedUser"
               FROM newsletter_issues
               JOIN users ON newsletter_issues.user_id = users.user_id
@@ -646,6 +654,7 @@ impl TryFrom<NewNewsletterIssueData> for NewNewsletterIssue {
 pub struct PublicNewsletter {
     #[serde(serialize_with = "serialize_html_content")]
     pub content: String,
+    pub cover_image_url: String,
     pub description: String,
     pub published_at: Option<DateTime<Utc>>,
     pub slug: String,
@@ -659,6 +668,7 @@ fn serialize_html_content<S: Serializer>(content: &str, serializer: S) -> Result
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PublicNewsletterListItem {
+    pub cover_image_url: String,
     pub description: String,
     pub published_at: Option<DateTime<Utc>>,
     pub slug: String,

@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n              SELECT\n                newsletter_issues.cover_image_url,\n                newsletter_issues.description,\n                newsletter_issues.published_at,\n                newsletter_issues.slug,\n                newsletter_issues.title,\n                (\n                  user_profiles.avatar_url,\n                  user_profiles.banner_url,\n                  user_profiles.description,\n                  user_profiles.display_name,\n                  users.username\n                ) AS \"user!: AssociatedUser\"\n              FROM newsletter_issues\n              JOIN users ON newsletter_issues.user_id = users.user_id\n              JOIN user_profiles ON newsletter_issues.user_id = user_profiles.user_id\n              WHERE newsletter_issues.published_at IS NOT NULL\n                AND users.username = $1\n              ORDER BY published_at DESC\n              LIMIT 10\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "cover_image_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "description",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "published_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
+        "name": "slug",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "user!: AssociatedUser",
+        "type_info": "Record"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "e05230e67341b8329a11205a4f566eb10426dad3e9a14a93bd4d760e7ff3dd08"
+}
