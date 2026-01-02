@@ -3,7 +3,9 @@ use crate::clients::cloudinary_client::CloudinaryClient;
 use crate::clients::s3_client::S3Client;
 use crate::configuration::{DatabaseSettings, Settings};
 use crate::email_client::EmailClient;
-use crate::routes::{admin, health_check, index, login, newsletters, subscriptions, users};
+use crate::routes::{
+    admin, captcha, health_check, index, login, newsletters, subscriptions, users,
+};
 use actix_cors::Cors;
 use actix_session::SessionMiddleware;
 use actix_session::storage::RedisSessionStore;
@@ -50,6 +52,7 @@ impl Application {
             host_origin_url,
             configuration.hosts.client,
             configuration.application.session_key,
+            configuration.application.captcha_secret,
         )
         .await?;
 
@@ -82,6 +85,7 @@ async fn run(
     host_origin_url: String,
     client_url: String,
     session_key: String,
+    captcha_secret: Secret<String>,
 ) -> Result<Server, anyhow::Error> {
     let base_url = Data::new(ApplicationBaseUrl(base_url));
     let cloudinary_client = Data::new(cloudinary_client);
@@ -143,6 +147,7 @@ async fn run(
                     .service(admin::user::avatar::put)
                     .service(admin::password::put),
             )
+            .service(captcha::get)
             .service(health_check::get)
             .service(login::post)
             .service(newsletters::get)
@@ -158,6 +163,7 @@ async fn run(
             .app_data(email_client.clone())
             .app_data(s3_client.clone())
             .app_data(Data::new(HmacSecret(hmac_secret.clone())))
+            .app_data(Data::new(CaptchaSecret(captcha_secret.clone())))
             .app_data(web::JsonConfig::default().limit(1024 * 1024 * 50))
     })
     .listen(listener)?
@@ -169,3 +175,6 @@ pub struct ApplicationBaseUrl(pub String);
 
 #[derive(Clone)]
 pub struct HmacSecret(pub Secret<String>);
+
+#[derive(Clone)]
+pub struct CaptchaSecret(pub Secret<String>);

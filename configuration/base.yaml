@@ -1,6 +1,7 @@
 application:
   port: 8000
   host: 0.0.0.0
+  captcha_secret: "A32ByteLongAlphanumericSecretKey"
   hmac_secret: "super-long-and-secret-random-key-needed-to-verify-message-integrity"
   session_key: "newsletter_api_key"
 cloudinary_client:

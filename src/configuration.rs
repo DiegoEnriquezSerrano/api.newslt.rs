@@ -22,6 +22,7 @@ pub struct Settings {
 #[derive(Deserialize, Clone)]
 pub struct ApplicationSettings {
     pub base_url: String,
+    pub captcha_secret: Secret<String>,
     pub hmac_secret: Secret<String>,
     pub host: String,
     #[serde(deserialize_with = "deserialize_number_from_string")]
