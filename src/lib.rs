@@ -1,4 +1,5 @@
 pub mod authentication;
+pub mod challenge;
 pub mod clients;
 pub mod configuration;
 pub mod domain;
