@@ -17,7 +17,7 @@ pub struct Base64Challenger {
 
 impl Base64Challenger {
     pub fn new(secret: Secret<String>) -> Result<Self, anyhow::Error> {
-        if secret.expose_secret().as_bytes().len() != 32 {
+        if secret.expose_secret().len() != 32 {
             anyhow::bail!("Secret must be 32 bytes in length.")
         }
 
