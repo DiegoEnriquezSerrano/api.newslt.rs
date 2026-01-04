@@ -37,6 +37,20 @@ services:
     restart: unless-stopped
     volumes:
       - newsletter-rustfs:/data
+  newsletter-mailpit:
+    env_file: .env
+    expose:
+      - 8025
+      - 1025
+    image: axllent/mailpit:v1.28.0
+    networks:
+      - newsletter-net
+    ports:
+      - 8025:8025
+      - 1025:1025
+    restart: unless-stopped
+    volumes:
+      - newsletter-mailpit:/data
   newsletter-test-db:
     image: postgres:17-alpine
     env_file: .env.test
@@ -73,6 +87,7 @@ volumes:
   newsletter-db:
   newsletter-valkey:
   newsletter-rustfs:
+  newsletter-mailpit:
 networks:
   newsletter-net:
     driver: bridge

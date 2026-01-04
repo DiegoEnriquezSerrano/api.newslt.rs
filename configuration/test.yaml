@@ -10,9 +10,14 @@ cloudinary_client:
   id: "12345abcdef"
 database:
   port: 54321
+email_client:
+  base_url: http://localhost:8025
+  server: mailpit
 s3_client:
   access_key: S3SecretKeyx123456789
   endpoint: http://127.0.0.1:9002
   region: global
   secret_key: S3AccessKey
+hosts:
+  client: "http://127.0.0.1:5173"
 redis_uri: "redis://127.0.0.1:63791"

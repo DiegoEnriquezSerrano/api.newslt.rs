@@ -3,7 +3,7 @@ use fake::faker::internet::en::SafeEmail;
 use fake::faker::name::en::Name;
 use newsletter_api::clients::cloudinary_client::CloudinaryClient;
 use newsletter_api::configuration::{DatabaseSettings, get_configuration};
-use newsletter_api::email_client::EmailClient;
+use newsletter_api::email_client::{EmailClient, EmailServer};
 use newsletter_api::issue_delivery_worker::{ExecutionOutcome, try_execute_task};
 use newsletter_api::models::{NewUser, NewUserData, UserProfile};
 use newsletter_api::startup::{Application, get_connection_pool};
@@ -320,7 +320,7 @@ impl TestApp {
             "user_id": user_id
         });
 
-        let _mock_guard = Mock::given(path("/email"))
+        let _mock_guard = Mock::given(path("/api/v1/send"))
             .and(method("POST"))
             .respond_with(ResponseTemplate::new(200))
             .named("Create unconfirmed subscriber")
@@ -371,8 +371,15 @@ impl TestApp {
             confirmation_link
         };
 
-        let html = get_link(body["HtmlBody"].as_str().unwrap());
-        let plain_text = get_link(body["TextBody"].as_str().unwrap());
+        let html = match self.email_client.server {
+            EmailServer::Mailpit => get_link(body["Html"].as_str().unwrap()),
+            EmailServer::Postmark => get_link(body["HtmlBody"].as_str().unwrap()),
+        };
+        let plain_text = match self.email_client.server {
+            EmailServer::Mailpit => get_link(body["Text"].as_str().unwrap()),
+            EmailServer::Postmark => get_link(body["TextBody"].as_str().unwrap()),
+        };
+
         ConfirmationLinks { html, plain_text }
     }
 }

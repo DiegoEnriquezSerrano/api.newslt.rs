@@ -70,7 +70,7 @@ async fn newsletters_are_delivered_to_confirmed_subscribers() {
         .await;
     assert_eq!(201, response.status().as_u16());
 
-    Mock::given(path("/email"))
+    Mock::given(path("/api/v1/send"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
         .expect(1)
@@ -170,7 +170,7 @@ async fn newsletter_publishing_is_idempotent() {
         .await;
     assert_eq!(201, response.status().as_u16());
 
-    Mock::given(path("/email"))
+    Mock::given(path("/api/v1/send"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
         .expect(1)
@@ -225,7 +225,7 @@ async fn concurrent_form_submission_is_handled_gracefully() {
     }))
     .await;
 
-    Mock::given(path("/email"))
+    Mock::given(path("/api/v1/send"))
         .and(method("POST"))
         // Setting a long delay to ensure that the second request
         // arrives before the first one completes
