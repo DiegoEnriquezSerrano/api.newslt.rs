@@ -88,6 +88,7 @@ async fn run(
     captcha_secret: Secret<String>,
 ) -> Result<Server, anyhow::Error> {
     let base_url = Data::new(ApplicationBaseUrl(base_url));
+    let client_base_url = Data::new(ApplicationClientBaseUrl(client_url.clone()));
     let cloudinary_client = Data::new(cloudinary_client);
     let db_pool = Data::new(db_pool);
     let email_client = Data::new(email_client);
@@ -157,6 +158,7 @@ async fn run(
             .service(subscriptions::post)
             .service(users::detail::get)
             .service(users::get)
+            .app_data(client_base_url.clone())
             .app_data(base_url.clone())
             .app_data(cloudinary_client.clone())
             .app_data(db_pool.clone())
@@ -172,6 +174,8 @@ async fn run(
 }
 
 pub struct ApplicationBaseUrl(pub String);
+
+pub struct ApplicationClientBaseUrl(pub String);
 
 #[derive(Clone)]
 pub struct HmacSecret(pub Secret<String>);

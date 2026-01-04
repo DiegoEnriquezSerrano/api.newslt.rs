@@ -31,7 +31,7 @@ impl EmailClient {
 
     pub async fn send_email(
         &self,
-        recipient: &SubscriberEmail,
+        recipient: &str,
         subject: &str,
         html_content: &str,
         text_content: &str,
@@ -39,7 +39,7 @@ impl EmailClient {
         let url: String = self.server.url(&self.base_url);
         let request_body = SendEmailRequest {
             from: self.sender.as_ref(),
-            to: recipient.as_ref(),
+            to: recipient,
             subject,
             html_body: html_content,
             text_body: text_content,
@@ -76,11 +76,11 @@ impl From<SendEmailRequest<'_>> for MailpitSendEmailRequest {
         MailpitSendEmailRequest {
             from: MailpitContact {
                 email: email_request.from.to_string(),
-                name: Some("".to_string()),
+                name: None,
             },
             to: vec![MailpitContact {
                 email: email_request.to.to_string(),
-                name: Some("".to_string()),
+                name: None,
             }],
             subject: email_request.subject.to_string(),
             text: email_request.text_body.to_string(),
@@ -229,7 +229,7 @@ mod tests {
 
         // Act
         let _ = email_client
-            .send_email(&email(), &subject(), &content(), &content())
+            .send_email(email().as_ref(), &subject(), &content(), &content())
             .await;
 
         // Assert
@@ -249,7 +249,7 @@ mod tests {
 
         // Act
         let outcome = email_client
-            .send_email(&email(), &subject(), &content(), &content())
+            .send_email(email().as_ref(), &subject(), &content(), &content())
             .await;
 
         // Assert
@@ -271,7 +271,7 @@ mod tests {
 
         // Act
         let outcome = email_client
-            .send_email(&email(), &subject(), &content(), &content())
+            .send_email(email().as_ref(), &subject(), &content(), &content())
             .await;
 
         // Assert
@@ -293,7 +293,7 @@ mod tests {
 
         // Act
         let outcome = email_client
-            .send_email(&email(), &subject(), &content(), &content())
+            .send_email(email().as_ref(), &subject(), &content(), &content())
             .await;
 
         // Assert
