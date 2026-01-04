@@ -306,18 +306,18 @@ impl TestApp {
 
     pub async fn create_unconfirmed_subscriber(
         &self,
-        user_id: Option<Uuid>,
+        username: Option<String>,
         email: Option<String>,
     ) -> ConfirmationLinks {
         // We are working with multiple subscribers now,
         // their details must be randomised to avoid conflicts!
         let name: String = Name().fake();
         let email: String = email.unwrap_or(SafeEmail().fake());
-        let user_id: Uuid = user_id.unwrap_or(self.test_user.user_id);
+        let username: String = username.unwrap_or(self.test_user.username.clone());
         let body = &serde_json::json!({
             "name": name,
             "email": email,
-            "user_id": user_id
+            "username": username
         });
 
         let _mock_guard = Mock::given(path("/api/v1/send"))
@@ -342,8 +342,12 @@ impl TestApp {
         self.get_confirmation_links(&email_request)
     }
 
-    pub async fn create_confirmed_subscriber(&self, user_id: Option<Uuid>, email: Option<String>) {
-        let confirmation_link = self.create_unconfirmed_subscriber(user_id, email).await;
+    pub async fn create_confirmed_subscriber(
+        &self,
+        username: Option<String>,
+        email: Option<String>,
+    ) {
+        let confirmation_link = self.create_unconfirmed_subscriber(username, email).await;
 
         self.api_client
             .put(confirmation_link.html)

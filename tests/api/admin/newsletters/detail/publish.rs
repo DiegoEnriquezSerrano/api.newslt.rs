@@ -272,8 +272,11 @@ async fn newsletters_are_not_delivered_to_anothers_confirmed_subscribers() {
     let second_user = second_user.store(&mut transaction).await.unwrap();
     let _ = transaction.commit().await;
 
-    app.create_confirmed_subscriber(Some(second_user.user_id), Some(subscriber_email.clone()))
-        .await;
+    app.create_confirmed_subscriber(
+        Some(second_user.username.clone()),
+        Some(subscriber_email.clone()),
+    )
+    .await;
     app.create_confirmed_subscriber(None, Some(subscriber_email.clone()))
         .await;
 

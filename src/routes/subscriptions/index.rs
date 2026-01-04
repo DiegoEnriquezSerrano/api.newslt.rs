@@ -1,7 +1,8 @@
 use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
 use crate::email_client::EmailClient;
+use crate::models::User;
 use crate::startup::ApplicationBaseUrl;
-use crate::utils::{e400, e500, error_chain_fmt};
+use crate::utils::{e400, e404, e500, error_chain_fmt};
 use actix_web::{HttpResponse, post, web};
 use anyhow::Context;
 use chrono::Utc;
@@ -9,28 +10,31 @@ use rand::distributions::Alphanumeric;
 use rand::{Rng, thread_rng};
 use serde::{Deserialize, Serialize};
 use sqlx::{Executor, PgPool, Postgres, Transaction};
-use std::convert::{TryFrom, TryInto};
 use uuid::Uuid;
 
 #[derive(Deserialize, Serialize)]
 pub struct SubscribeParams {
     email: String,
     name: String,
-    user_id: Uuid,
+    username: String,
 }
 
-impl TryFrom<SubscribeParams> for NewSubscriber {
-    type Error = String;
-
-    fn try_from(params: SubscribeParams) -> Result<Self, Self::Error> {
-        let name = SubscriberName::parse(params.name)?;
-        let email = SubscriberEmail::parse(params.email)?;
-        let user_id = params.user_id;
+impl NewSubscriber {
+    async fn try_from(
+        params: SubscribeParams,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> Result<Self, actix_web::Error> {
+        let name = SubscriberName::parse(params.name).map_err(e400)?;
+        let email = SubscriberEmail::parse(params.email).map_err(e400)?;
+        let user: User = User::find_by_username(&params.username, transaction)
+            .await
+            .context("Failed to find user.")
+            .map_err(e404)?;
 
         Ok(Self {
             email,
             name,
-            user_id,
+            user_id: user.user_id,
         })
     }
 }
@@ -50,12 +54,12 @@ pub async fn post(
     email_client: web::Data<EmailClient>,
     base_url: web::Data<ApplicationBaseUrl>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let new_subscriber = params.0.try_into().map_err(e400)?;
     let mut transaction = pool
         .begin()
         .await
         .context("Failed to acquire a Postgres connection from the pool")
         .map_err(e500)?;
+    let new_subscriber = NewSubscriber::try_from(params.0, &mut transaction).await?;
     let subscriber_id = insert_subscriber(&mut transaction, &new_subscriber)
         .await
         .context("Failed to insert new subscriber in the database.")

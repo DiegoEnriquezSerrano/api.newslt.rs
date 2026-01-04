@@ -31,7 +31,7 @@ async fn the_link_returned_by_subscribe_returns_a_200_if_called() {
         .await;
 
     app.post_subscriptions(
-        &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
+        &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "username": &app.test_user.username}),
     )
     .await;
     let email_request = &app.email_server.received_requests().await.unwrap()[0];
@@ -61,7 +61,7 @@ async fn clicking_on_the_confirmation_link_confirms_a_subscriber() {
         .await;
 
     app.post_subscriptions(
-        &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
+        &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "username": &app.test_user.username}),
     )
     .await;
     let email_request = &app.email_server.received_requests().await.unwrap()[0];

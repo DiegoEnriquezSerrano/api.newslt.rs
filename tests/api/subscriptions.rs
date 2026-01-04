@@ -18,7 +18,7 @@ async fn subscribe_returns_a_200_for_valid_params() {
     // Act
     let response = app
         .post_subscriptions(
-            &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
+            &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "username": &app.test_user.username}),
         )
         .await;
 
@@ -33,7 +33,7 @@ async fn subscribe_persists_the_new_subscriber() {
 
     // Act
     app.post_subscriptions(
-        &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
+        &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "username": &app.test_user.username}),
     )
     .await;
 
@@ -62,7 +62,7 @@ async fn subscribe_fails_if_there_is_a_fatal_database_error() {
     // Act
     let response = app
         .post_subscriptions(
-            &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
+            &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "username": &app.test_user.username}),
         )
         .await;
 
@@ -84,7 +84,7 @@ async fn subscribe_sends_a_confirmation_email_for_valid_data() {
 
     // Act
     app.post_subscriptions(
-        &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
+        &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "username": &app.test_user.username}),
     )
     .await;
 
@@ -105,7 +105,7 @@ async fn subscribe_sends_a_confirmation_email_with_a_link() {
 
     // Act
     app.post_subscriptions(
-        &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
+        &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "username": &app.test_user.username}),
     )
     .await;
 
@@ -123,15 +123,15 @@ async fn subscribe_returns_a_400_when_data_is_missing() {
     let app = spawn_app().await;
     let test_cases = vec![
         (
-            serde_json::json!({"name": "le guin", "user_id": &app.test_user.user_id}),
+            serde_json::json!({"name": "le guin", "username": &app.test_user.username}),
             "missing the email",
         ),
         (
-            serde_json::json!({"email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
+            serde_json::json!({"email": "ursula_le_guin@gmail.com", "username": &app.test_user.username}),
             "missing the email",
         ),
         (
-            serde_json::json!({"user_id": &app.test_user.user_id}),
+            serde_json::json!({"username": &app.test_user.username}),
             "missing both name and email",
         ),
     ];
@@ -157,15 +157,15 @@ async fn subscribe_returns_a_400_with_json_message_when_fields_are_present_but_i
     let app = spawn_app().await;
     let test_cases = vec![
         (
-            serde_json::json!({"name": "", "email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
+            serde_json::json!({"name": "", "email": "ursula_le_guin@gmail.com", "username": &app.test_user.username}),
             "empty name",
         ),
         (
-            serde_json::json!({"name": "Ursula", "email": "", "user_id": &app.test_user.user_id}),
+            serde_json::json!({"name": "Ursula", "email": "", "username": &app.test_user.username}),
             "empty email",
         ),
         (
-            serde_json::json!({"name": "Ursula", "email": "definitely-not-an-email", "user_id": &app.test_user.user_id}),
+            serde_json::json!({"name": "Ursula", "email": "definitely-not-an-email", "username": &app.test_user.username}),
             "invalid email",
         ),
     ];
