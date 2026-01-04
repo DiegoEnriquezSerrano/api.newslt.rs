@@ -4,8 +4,46 @@ use argon2::password_hash::SaltString;
 use argon2::{Algorithm, Argon2, Params, PasswordHasher, Version};
 use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
-use sqlx::{Executor, Postgres, Transaction};
+use sqlx::postgres::PgRow;
+use sqlx::{Executor, Postgres, Row, Transaction};
 use uuid::Uuid;
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct User {
+    pub user_id: Uuid,
+    pub username: String,
+}
+
+impl TryFrom<PgRow> for User {
+    type Error = sqlx::Error;
+
+    fn try_from(row: PgRow) -> Result<Self, Self::Error> {
+        Ok(Self {
+            user_id: row.try_get("user_id")?,
+            username: row.try_get("username")?,
+        })
+    }
+}
+
+impl User {
+    pub async fn find_by_username(
+        username: &str,
+        transaction: &mut Transaction<'_, Postgres>,
+    ) -> Result<User, sqlx::Error> {
+        transaction
+            .fetch_one(sqlx::query_as!(
+                User,
+                r#"
+                  SELECT user_id, username
+                  FROM users
+                  WHERE username = $1
+                "#,
+                username
+            ))
+            .await?
+            .try_into()
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NewUser {
