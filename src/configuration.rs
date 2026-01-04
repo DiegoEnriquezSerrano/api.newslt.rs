@@ -1,7 +1,7 @@
 use crate::clients::cloudinary_client::CloudinaryClient;
 use crate::clients::s3_client::S3Client;
 use crate::domain::SubscriberEmail;
-use crate::email_client::EmailClient;
+use crate::email_client::{EmailClient, EmailServer, deserialize_email_server_from_string};
 use secrecy::{ExposeSecret, Secret};
 use serde::Deserialize;
 use serde_aux::field_attributes::deserialize_number_from_string;
@@ -108,6 +108,8 @@ pub struct EmailClientSettings {
     pub authorization_token: Secret<String>,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub timeout_milliseconds: u64,
+    #[serde(deserialize_with = "deserialize_email_server_from_string")]
+    pub server: EmailServer,
 }
 
 impl EmailClientSettings {
@@ -119,6 +121,7 @@ impl EmailClientSettings {
             sender_email,
             self.authorization_token,
             timeout,
+            self.server,
         )
     }
 

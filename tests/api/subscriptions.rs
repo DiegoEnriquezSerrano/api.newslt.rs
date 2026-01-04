@@ -9,7 +9,7 @@ async fn subscribe_returns_a_200_for_valid_params() {
     // Arrange
     let app = spawn_app().await;
 
-    Mock::given(path("/email"))
+    Mock::given(path("/api/v1/send"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
         .mount(&app.email_server)
@@ -75,7 +75,7 @@ async fn subscribe_sends_a_confirmation_email_for_valid_data() {
     // Arrange
     let app = spawn_app().await;
 
-    Mock::given(path("/email"))
+    Mock::given(path("/api/v1/send"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
         .expect(1)
@@ -97,7 +97,7 @@ async fn subscribe_sends_a_confirmation_email_with_a_link() {
     // Arrange
     let app = spawn_app().await;
 
-    Mock::given(path("/email"))
+    Mock::given(path("/api/v1/send"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
         .mount(&app.email_server)

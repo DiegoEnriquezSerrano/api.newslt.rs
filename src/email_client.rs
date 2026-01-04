@@ -1,12 +1,14 @@
 use crate::domain::SubscriberEmail;
 use reqwest::Client;
 use secrecy::{ExposeSecret, Secret};
+use serde::{Deserialize, Deserializer, Serialize};
 
 pub struct EmailClient {
     http_client: Client,
     base_url: String,
     sender: SubscriberEmail,
     authorization_token: Secret<String>,
+    pub server: EmailServer,
 }
 
 impl EmailClient {
@@ -15,6 +17,7 @@ impl EmailClient {
         sender: SubscriberEmail,
         authorization_token: Secret<String>,
         timeout: std::time::Duration,
+        server: EmailServer,
     ) -> Self {
         let http_client = Client::builder().timeout(timeout).build().unwrap();
         Self {
@@ -22,6 +25,7 @@ impl EmailClient {
             base_url,
             sender,
             authorization_token,
+            server,
         }
     }
 
@@ -32,7 +36,7 @@ impl EmailClient {
         html_content: &str,
         text_content: &str,
     ) -> Result<(), reqwest::Error> {
-        let url = format!("{}/email", self.base_url);
+        let url: String = self.server.url(&self.base_url);
         let request_body = SendEmailRequest {
             from: self.sender.as_ref(),
             to: recipient.as_ref(),
@@ -40,16 +44,19 @@ impl EmailClient {
             html_body: html_content,
             text_body: text_content,
         };
-        self.http_client
-            .post(&url)
-            .header(
-                "X-Postmark-Server-Token",
-                self.authorization_token.expose_secret(),
-            )
-            .json(&request_body)
-            .send()
-            .await?
-            .error_for_status()?;
+        let builder = self.http_client.post(&url).header(
+            "X-Postmark-Server-Token",
+            self.authorization_token.expose_secret(),
+        );
+
+        match self.server {
+            EmailServer::Mailpit => builder.json(&MailpitSendEmailRequest::from(request_body)),
+            EmailServer::Postmark => builder.json(&request_body),
+        }
+        .send()
+        .await?
+        .error_for_status()?;
+
         Ok(())
     }
 }
@@ -64,10 +71,95 @@ struct SendEmailRequest<'a> {
     text_body: &'a str,
 }
 
+impl From<SendEmailRequest<'_>> for MailpitSendEmailRequest {
+    fn from(email_request: SendEmailRequest) -> Self {
+        MailpitSendEmailRequest {
+            from: MailpitContact {
+                email: email_request.from.to_string(),
+                name: Some("".to_string()),
+            },
+            to: vec![MailpitContact {
+                email: email_request.to.to_string(),
+                name: Some("".to_string()),
+            }],
+            subject: email_request.subject.to_string(),
+            text: email_request.text_body.to_string(),
+            html: email_request.html_body.to_string(),
+        }
+    }
+}
+
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "PascalCase")]
+pub struct MailpitContact {
+    pub email: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "PascalCase")]
+pub struct MailpitSendEmailRequest {
+    pub from: MailpitContact,
+    pub to: Vec<MailpitContact>,
+    pub subject: String,
+    pub text: String,
+    pub html: String,
+}
+
+/// The possible email services for our application.
+#[derive(Clone)]
+pub enum EmailServer {
+    Postmark,
+    Mailpit,
+}
+
+impl EmailServer {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            EmailServer::Postmark => "postmark",
+            EmailServer::Mailpit => "mailpit",
+        }
+    }
+
+    pub fn url(&self, base_url: &str) -> String {
+        match self {
+            EmailServer::Postmark => format!("{}/email", base_url),
+            EmailServer::Mailpit => format!("{}/api/v1/send", base_url),
+        }
+    }
+}
+
+impl TryFrom<String> for EmailServer {
+    type Error = String;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        match s.to_lowercase().as_str() {
+            "postmark" => Ok(Self::Postmark),
+            "mailpit" => Ok(Self::Mailpit),
+            other => Err(format!(
+                "{} is not a supported email server. Use either `postmark` or `mailpit`.",
+                other
+            )),
+        }
+    }
+}
+
+pub fn deserialize_email_server_from_string<'de, D>(
+    deserializer: D,
+) -> Result<EmailServer, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let email_server: String = Deserialize::deserialize(deserializer)?;
+
+    EmailServer::try_from(email_server).map_err(serde::de::Error::custom)
+}
+
 #[cfg(test)]
 mod tests {
     use crate::domain::SubscriberEmail;
-    use crate::email_client::EmailClient;
+    use crate::email_client::{EmailClient, EmailServer};
     use claims::{assert_err, assert_ok};
     use fake::faker::internet::en::SafeEmail;
     use fake::faker::lorem::en::{Paragraph, Sentence};
@@ -115,6 +207,7 @@ mod tests {
             email(),
             Secret::new(Faker.fake()),
             std::time::Duration::from_millis(200),
+            EmailServer::Postmark,
         )
     }
 
