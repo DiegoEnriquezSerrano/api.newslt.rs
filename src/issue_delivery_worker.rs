@@ -57,7 +57,7 @@ pub async fn try_execute_task(
             let issue: NewsletterIssueEmail = issue.into();
             if let Err(e) = email_client
                 .send_email(
-                    &email,
+                    email.as_ref(),
                     &issue.title,
                     &issue.html_content,
                     &issue.text_content,

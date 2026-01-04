@@ -23,6 +23,7 @@ async fn confirmations_without_token_are_rejected_with_a_400() {
 async fn the_link_returned_by_subscribe_returns_a_200_if_called() {
     // Arrange
     let app = spawn_app().await;
+    let (answer, challenge) = app.get_solved_captcha_challenge();
 
     Mock::given(path("/email"))
         .and(method("POST"))
@@ -30,9 +31,13 @@ async fn the_link_returned_by_subscribe_returns_a_200_if_called() {
         .mount(&app.email_server)
         .await;
 
-    app.post_subscriptions(
-        &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
-    )
+    app.post_subscriptions(&serde_json::json!({
+      "name": "le guin",
+      "email": "ursula_le_guin@gmail.com",
+      "username": &app.test_user.username,
+      "signed_answer": challenge,
+      "answer_attempt": answer
+    }))
     .await;
     let email_request = &app.email_server.received_requests().await.unwrap()[0];
     let confirmation_links = app.get_confirmation_links(email_request);
@@ -53,6 +58,7 @@ async fn the_link_returned_by_subscribe_returns_a_200_if_called() {
 async fn clicking_on_the_confirmation_link_confirms_a_subscriber() {
     // Arrange
     let app = spawn_app().await;
+    let (answer, challenge) = app.get_solved_captcha_challenge();
 
     Mock::given(path("/email"))
         .and(method("POST"))
@@ -60,9 +66,13 @@ async fn clicking_on_the_confirmation_link_confirms_a_subscriber() {
         .mount(&app.email_server)
         .await;
 
-    app.post_subscriptions(
-        &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
-    )
+    app.post_subscriptions(&serde_json::json!({
+      "name": "le guin",
+      "email": "ursula_le_guin@gmail.com",
+      "username": &app.test_user.username,
+      "signed_answer": challenge,
+      "answer_attempt": answer
+    }))
     .await;
     let email_request = &app.email_server.received_requests().await.unwrap()[0];
     let confirmation_links = app.get_confirmation_links(email_request);

@@ -1,6 +1,7 @@
 use fake::Fake;
 use fake::faker::internet::en::SafeEmail;
 use fake::faker::name::en::Name;
+use newsletter_api::challenge::Base64Challenger;
 use newsletter_api::clients::cloudinary_client::CloudinaryClient;
 use newsletter_api::configuration::{DatabaseSettings, get_configuration};
 use newsletter_api::email_client::{EmailClient, EmailServer};
@@ -38,6 +39,7 @@ pub struct TestApp {
     pub cloudinary_client: CloudinaryClient,
     pub cloudinary_server: MockServer,
     pub email_client: EmailClient,
+    pub captcha_secret: Secret<String>,
 }
 
 /// Confirmation links embedded in the request to the email API.
@@ -306,18 +308,21 @@ impl TestApp {
 
     pub async fn create_unconfirmed_subscriber(
         &self,
-        user_id: Option<Uuid>,
+        username: Option<String>,
         email: Option<String>,
     ) -> ConfirmationLinks {
+        let (answer, challenge) = self.get_solved_captcha_challenge();
         // We are working with multiple subscribers now,
         // their details must be randomised to avoid conflicts!
         let name: String = Name().fake();
         let email: String = email.unwrap_or(SafeEmail().fake());
-        let user_id: Uuid = user_id.unwrap_or(self.test_user.user_id);
+        let username: String = username.unwrap_or(self.test_user.username.clone());
         let body = &serde_json::json!({
             "name": name,
             "email": email,
-            "user_id": user_id
+            "username": username,
+            "signed_answer": challenge,
+            "answer_attempt": answer,
         });
 
         let _mock_guard = Mock::given(path("/api/v1/send"))
@@ -342,8 +347,12 @@ impl TestApp {
         self.get_confirmation_links(&email_request)
     }
 
-    pub async fn create_confirmed_subscriber(&self, user_id: Option<Uuid>, email: Option<String>) {
-        let confirmation_link = self.create_unconfirmed_subscriber(user_id, email).await;
+    pub async fn create_confirmed_subscriber(
+        &self,
+        username: Option<String>,
+        email: Option<String>,
+    ) {
+        let confirmation_link = self.create_unconfirmed_subscriber(username, email).await;
 
         self.api_client
             .put(confirmation_link.html)
@@ -381,6 +390,17 @@ impl TestApp {
         };
 
         ConfirmationLinks { html, plain_text }
+    }
+
+    pub fn get_solved_captcha_challenge(&self) -> (String, String) {
+        let challenge = Base64Challenger::new(self.captcha_secret.clone())
+            .expect("Creating new captcha challenge.")
+            .encrypt()
+            .expect("Encrypting message.");
+        let answer = Base64Challenger::decrypt(&challenge, self.captcha_secret.clone())
+            .expect("decrypting answer.");
+
+        (answer, challenge)
     }
 }
 
@@ -438,6 +458,7 @@ pub async fn spawn_app() -> TestApp {
         test_user,
         api_client: client,
         email_client: configuration.email_client.client(),
+        captcha_secret: configuration.application.captcha_secret,
     };
 
     test_app

@@ -8,6 +8,7 @@ use wiremock::{Mock, ResponseTemplate};
 async fn subscribe_returns_a_200_for_valid_params() {
     // Arrange
     let app = spawn_app().await;
+    let (answer, challenge) = app.get_solved_captcha_challenge();
 
     Mock::given(path("/api/v1/send"))
         .and(method("POST"))
@@ -17,9 +18,13 @@ async fn subscribe_returns_a_200_for_valid_params() {
 
     // Act
     let response = app
-        .post_subscriptions(
-            &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
-        )
+        .post_subscriptions(&serde_json::json!({
+            "name": "le guin",
+            "email": "ursula_le_guin@gmail.com",
+            "username": &app.test_user.username,
+            "signed_answer": challenge,
+            "answer_attempt": answer
+        }))
         .await;
 
     // Assert
@@ -30,11 +35,16 @@ async fn subscribe_returns_a_200_for_valid_params() {
 async fn subscribe_persists_the_new_subscriber() {
     // Arrange
     let app = spawn_app().await;
+    let (answer, challenge) = app.get_solved_captcha_challenge();
 
     // Act
-    app.post_subscriptions(
-        &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
-    )
+    app.post_subscriptions(&serde_json::json!({
+      "name": "le guin",
+      "email": "ursula_le_guin@gmail.com",
+      "username": &app.test_user.username,
+      "signed_answer": challenge,
+      "answer_attempt": answer
+    }))
     .await;
 
     // Assert
@@ -52,6 +62,7 @@ async fn subscribe_persists_the_new_subscriber() {
 async fn subscribe_fails_if_there_is_a_fatal_database_error() {
     // Arrange
     let app = spawn_app().await;
+    let (answer, challenge) = app.get_solved_captcha_challenge();
 
     // Sabotage the database
     sqlx::query!("ALTER TABLE subscriptions DROP COLUMN email;",)
@@ -61,9 +72,13 @@ async fn subscribe_fails_if_there_is_a_fatal_database_error() {
 
     // Act
     let response = app
-        .post_subscriptions(
-            &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
-        )
+        .post_subscriptions(&serde_json::json!({
+            "name": "le guin", "email":
+            "ursula_le_guin@gmail.com",
+            "username": &app.test_user.username,
+            "signed_answer": challenge,
+            "answer_attempt": answer
+        }))
         .await;
 
     // Assert
@@ -74,6 +89,7 @@ async fn subscribe_fails_if_there_is_a_fatal_database_error() {
 async fn subscribe_sends_a_confirmation_email_for_valid_data() {
     // Arrange
     let app = spawn_app().await;
+    let (answer, challenge) = app.get_solved_captcha_challenge();
 
     Mock::given(path("/api/v1/send"))
         .and(method("POST"))
@@ -83,9 +99,13 @@ async fn subscribe_sends_a_confirmation_email_for_valid_data() {
         .await;
 
     // Act
-    app.post_subscriptions(
-        &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
-    )
+    app.post_subscriptions(&serde_json::json!({
+    "name": "le guin",
+    "email": "ursula_le_guin@gmail.com",
+    "username": &app.test_user.username,
+    "signed_answer": challenge,
+    "answer_attempt": answer
+    }))
     .await;
 
     // Assert
@@ -96,6 +116,7 @@ async fn subscribe_sends_a_confirmation_email_for_valid_data() {
 async fn subscribe_sends_a_confirmation_email_with_a_link() {
     // Arrange
     let app = spawn_app().await;
+    let (answer, challenge) = app.get_solved_captcha_challenge();
 
     Mock::given(path("/api/v1/send"))
         .and(method("POST"))
@@ -104,9 +125,13 @@ async fn subscribe_sends_a_confirmation_email_with_a_link() {
         .await;
 
     // Act
-    app.post_subscriptions(
-        &serde_json::json!({"name": "le guin", "email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
-    )
+    app.post_subscriptions(&serde_json::json!({
+    "name": "le guin",
+    "email": "ursula_le_guin@gmail.com",
+    "username": &app.test_user.username,
+    "signed_answer": challenge,
+    "answer_attempt": answer
+    }))
     .await;
 
     // Assert
@@ -121,18 +146,60 @@ async fn subscribe_sends_a_confirmation_email_with_a_link() {
 async fn subscribe_returns_a_400_when_data_is_missing() {
     // Arrange
     let app = spawn_app().await;
+    let (answer, challenge) = app.get_solved_captcha_challenge();
     let test_cases = vec![
         (
-            serde_json::json!({"name": "le guin", "user_id": &app.test_user.user_id}),
+            serde_json::json!({
+                "name": "le guin",
+                "username": &app.test_user.username,
+                "signed_answer": challenge,
+                "answer_attempt": answer
+            }),
             "missing the email",
         ),
         (
-            serde_json::json!({"email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
-            "missing the email",
+            serde_json::json!({
+                "email": "ursula_le_guin@gmail.com",
+                "username": &app.test_user.username,
+                "signed_answer": challenge,
+                "answer_attempt": answer
+            }),
+            "missing the name",
         ),
         (
-            serde_json::json!({"user_id": &app.test_user.user_id}),
+            serde_json::json!({
+                "username": &app.test_user.username,
+                "signed_answer": challenge,
+                "answer_attempt": answer
+            }),
             "missing both name and email",
+        ),
+        (
+            serde_json::json!({
+                "name": "le guin",
+                "email": "ursula_le_guin@gmail.com",
+                "answer_attempt": answer,
+                "signed_answer": challenge,
+            }),
+            "missing the username",
+        ),
+        (
+            serde_json::json!({
+                "name": "le guin",
+                "email": "ursula_le_guin@gmail.com",
+                "username": &app.test_user.username,
+                "answer_attempt": answer
+            }),
+            "missing the signed answer",
+        ),
+        (
+            serde_json::json!({
+                "name": "le guin",
+                "email": "ursula_le_guin@gmail.com",
+                "username": &app.test_user.username,
+                "signed_answer": challenge,
+            }),
+            "missing the answer attempt",
         ),
     ];
 
@@ -155,18 +222,60 @@ async fn subscribe_returns_a_400_when_data_is_missing() {
 async fn subscribe_returns_a_400_with_json_message_when_fields_are_present_but_invalid() {
     // Arrange
     let app = spawn_app().await;
+    let (answer, challenge) = app.get_solved_captcha_challenge();
     let test_cases = vec![
         (
-            serde_json::json!({"name": "", "email": "ursula_le_guin@gmail.com", "user_id": &app.test_user.user_id}),
+            serde_json::json!({
+                "name": "",
+                "email": "ursula_le_guin@gmail.com",
+                "username": &app.test_user.username,
+                "signed_answer": challenge,
+                "answer_attempt": answer
+            }),
             "empty name",
         ),
         (
-            serde_json::json!({"name": "Ursula", "email": "", "user_id": &app.test_user.user_id}),
+            serde_json::json!({
+                "name": "Ursula",
+                "email": "",
+                "username": &app.test_user.username,
+                "signed_answer": challenge,
+                "answer_attempt": answer
+            }),
             "empty email",
         ),
         (
-            serde_json::json!({"name": "Ursula", "email": "definitely-not-an-email", "user_id": &app.test_user.user_id}),
+            serde_json::json!({
+                "name": "Ursula",
+                "email":
+                "definitely-not-an-email",
+                "username": &app.test_user.username,
+                "signed_answer": challenge,
+                "answer_attempt": answer
+            }),
             "invalid email",
+        ),
+        (
+            serde_json::json!({
+                "name": "Ursula",
+                "email":
+                "definitely-not-an-email",
+                "username": &app.test_user.username,
+                "signed_answer": challenge,
+                "answer_attempt": "badanswer"
+            }),
+            "invalid answer",
+        ),
+        (
+            serde_json::json!({
+                "name": "Ursula",
+                "email":
+                "definitely-not-an-email",
+                "username": &app.test_user.username,
+                "signed_answer": "invalidsig",
+                "answer_attempt": answer
+            }),
+            "invalid challenge",
         ),
     ];
 
