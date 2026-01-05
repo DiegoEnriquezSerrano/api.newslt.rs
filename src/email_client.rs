@@ -2,6 +2,7 @@ use crate::domain::SubscriberEmail;
 use reqwest::Client;
 use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Deserializer, Serialize};
+use tera::{Context, Tera};
 
 pub struct EmailClient {
     http_client: Client,
@@ -36,12 +37,20 @@ impl EmailClient {
         html_content: &str,
         text_content: &str,
     ) -> Result<(), reqwest::Error> {
+        let tera = Tera::new("templates/**/*.{html, txt}").unwrap();
+        let mut context = Context::new();
+        context.insert("html_content", html_content);
+        context.insert("subject", subject);
+
+        let html_body = tera
+            .render("email/newsletters/newsletter_issue.html", &context)
+            .expect("Failed to render template.");
         let url: String = self.server.url(&self.base_url);
         let request_body = SendEmailRequest {
             from: self.sender.as_ref(),
             to: recipient,
             subject,
-            html_body: html_content,
+            html_body: &html_body,
             text_body: text_content,
         };
         let builder = self.http_client.post(&url).header(
