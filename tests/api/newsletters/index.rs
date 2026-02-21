@@ -4,7 +4,7 @@ use fake::faker::internet::en::SafeEmail;
 use newsletter_api::models::{
     NewUser, NewUserData, NewsletterIssueAPI, PublicNewsletterListItem, UserProfile,
 };
-use secrecy::Secret;
+use secrecy::SecretString;
 
 #[tokio::test]
 async fn unauthenticated_user_can_get_published_timeline_newsletter_issues() {
@@ -116,7 +116,7 @@ async fn all_users_published_timeline_newsletters_are_listed() {
     let second_user = NewUser::try_from(NewUserData {
         username: uuid::Uuid::new_v4().to_string(),
         email: SafeEmail().fake(),
-        password: Secret::from("testpassword".to_string()),
+        password: SecretString::from("testpassword"),
     })
     .expect("Failed to initialize new user.")
     .store(&mut transaction)

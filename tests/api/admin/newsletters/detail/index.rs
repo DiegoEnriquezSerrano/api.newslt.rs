@@ -1,7 +1,7 @@
 use crate::helpers::spawn_app;
 use newsletter_api::models::{NewUser, NewUserData, NewsletterIssueAPI};
 use newsletter_api::utils::ResponseErrorMessage;
-use secrecy::Secret;
+use secrecy::SecretString;
 
 #[tokio::test]
 async fn unauthenticated_user_cannot_fetch_a_newsletter() {
@@ -71,7 +71,7 @@ async fn authenticated_user_cannot_view_anothers_newsletter() {
     let second_user: NewUser = NewUserData {
         username: uuid::Uuid::new_v4().to_string(),
         email: String::from("seconduser@example.org"),
-        password: Secret::new(String::from("testpassword")),
+        password: SecretString::from("testpassword"),
     }
     .try_into()
     .unwrap();
@@ -435,7 +435,7 @@ async fn authenticated_user_cannot_update_anothers_newsletter() {
     let second_user: NewUser = NewUserData {
         username: uuid::Uuid::new_v4().to_string(),
         email: String::from("seconduser@example.org"),
-        password: Secret::new(String::from("testpassword")),
+        password: SecretString::from("testpassword"),
     }
     .try_into()
     .unwrap();

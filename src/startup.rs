@@ -16,7 +16,7 @@ use actix_web::web::Data;
 use actix_web::{App, HttpServer, web};
 use actix_web_flash_messages::FlashMessagesFramework;
 use actix_web_flash_messages::storage::CookieMessageStore;
-use secrecy::{ExposeSecret, Secret};
+use secrecy::{ExposeSecret, SecretString};
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use std::net::TcpListener;
@@ -80,12 +80,12 @@ async fn run(
     email_client: EmailClient,
     s3_client: S3Client,
     base_url: String,
-    hmac_secret: Secret<String>,
-    redis_uri: Secret<String>,
+    hmac_secret: SecretString,
+    redis_uri: SecretString,
     host_origin_url: String,
     client_url: String,
     session_key: String,
-    captcha_secret: Secret<String>,
+    captcha_secret: SecretString,
 ) -> Result<Server, anyhow::Error> {
     let base_url = Data::new(ApplicationBaseUrl(base_url));
     let client_base_url = Data::new(ApplicationClientBaseUrl(client_url.clone()));
@@ -178,7 +178,7 @@ pub struct ApplicationBaseUrl(pub String);
 pub struct ApplicationClientBaseUrl(pub String);
 
 #[derive(Clone)]
-pub struct HmacSecret(pub Secret<String>);
+pub struct HmacSecret(pub SecretString);
 
 #[derive(Clone)]
-pub struct CaptchaSecret(pub Secret<String>);
+pub struct CaptchaSecret(pub SecretString);

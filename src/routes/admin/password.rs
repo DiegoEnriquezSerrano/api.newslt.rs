@@ -2,15 +2,15 @@ use crate::authentication::{AuthError, Credentials, UserId, validate_credentials
 use crate::routes::admin::dashboard::get_username;
 use crate::utils::{e400, e500};
 use actix_web::{HttpResponse, put, web};
-use secrecy::{ExposeSecret, Secret};
+use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
 use sqlx::PgPool;
 
 #[derive(Deserialize, Debug)]
 pub struct ChangePasswordParams {
-    current_password: Secret<String>,
-    new_password: Secret<String>,
-    new_password_check: Secret<String>,
+    current_password: SecretString,
+    new_password: SecretString,
+    new_password_check: SecretString,
 }
 
 #[put("/password")]
@@ -42,10 +42,7 @@ pub async fn put(
     Ok(HttpResponse::Ok().finish())
 }
 
-fn validate_password(
-    password: &Secret<String>,
-    password_check: &Secret<String>,
-) -> Result<(), String> {
+fn validate_password(password: &SecretString, password_check: &SecretString) -> Result<(), String> {
     if password.expose_secret() != password_check.expose_secret() {
         Err(ValidationFailure::Mismatch.into())
     } else if password.expose_secret().len() <= 12 {

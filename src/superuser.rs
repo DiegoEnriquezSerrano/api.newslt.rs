@@ -2,7 +2,7 @@ use anyhow::Result;
 use newsletter_api::configuration::get_configuration;
 use newsletter_api::models::{NewUser, NewUserData, UserProfile};
 use newsletter_api::startup::get_connection_pool;
-use secrecy::Secret;
+use secrecy::SecretString;
 use std::io::{self, Write};
 
 #[tokio::main]
@@ -40,7 +40,7 @@ async fn main() -> Result<()> {
         let new_user = NewUserData {
             email,
             username,
-            password: Secret::new(password_check),
+            password: SecretString::new(password_check.into()),
         };
         let mut transaction = connection_pool
             .begin()

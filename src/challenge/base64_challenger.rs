@@ -5,18 +5,18 @@ use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use captcha::Captcha;
 use captcha::filters::{Dots, Grid, Noise, Wave};
-use secrecy::{ExposeSecret, Secret};
+use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug)]
 pub struct Base64Challenger {
     pub base64_image: String,
     answer: String,
-    secret: Secret<String>,
+    secret: SecretString,
 }
 
 impl Base64Challenger {
-    pub fn new(secret: Secret<String>) -> Result<Self, anyhow::Error> {
+    pub fn new(secret: SecretString) -> Result<Self, anyhow::Error> {
         if secret.expose_secret().len() != 32 {
             anyhow::bail!("Secret must be 32 bytes in length.")
         }
@@ -61,7 +61,7 @@ impl Base64Challenger {
         Ok(STANDARD.encode(out))
     }
 
-    pub fn decrypt(encoded: &str, secret: Secret<String>) -> Result<String, anyhow::Error> {
+    pub fn decrypt(encoded: &str, secret: SecretString) -> Result<String, anyhow::Error> {
         let data = STANDARD
             .decode(encoded)
             .context("Failed to base64 decode challenge.")?;
@@ -87,7 +87,7 @@ impl Base64Challenger {
     pub fn verify(
         encoded: &str,
         answer: String,
-        secret: Secret<String>,
+        secret: SecretString,
     ) -> Result<(), anyhow::Error> {
         if Self::decrypt(encoded, secret)? == answer {
             Ok(())
@@ -107,11 +107,11 @@ pub struct CaptchaResponse {
 mod tests {
     use crate::challenge::Base64Challenger;
     use claims::{assert_err, assert_ok};
-    use secrecy::Secret;
+    use secrecy::SecretString;
 
     #[test]
     fn secret_must_be_32_bytes_in_length() {
-        let secret = Secret::from("W81lMp7E1J0569L2Z1ERpeX8XDiYn11".to_string());
+        let secret = SecretString::from("W81lMp7E1J0569L2Z1ERpeX8XDiYn11");
         let challenge = Base64Challenger::new(secret);
 
         assert_err!(challenge);
@@ -119,7 +119,7 @@ mod tests {
 
     #[test]
     fn can_create_challenge_image() {
-        let secret = Secret::from("w8ar9i496zulwEayDG828Y67i09IfwWC".to_string());
+        let secret = SecretString::from("w8ar9i496zulwEayDG828Y67i09IfwWC");
         let challenge = Base64Challenger::new(secret);
 
         assert_ok!(challenge);
@@ -127,7 +127,7 @@ mod tests {
 
     #[test]
     fn can_encrypt_challenge() {
-        let secret = Secret::from("njE17BV5QLYO82V3UWoa22ZwwdiD40l2".to_string());
+        let secret = SecretString::from("njE17BV5QLYO82V3UWoa22ZwwdiD40l2");
         let challenge = Base64Challenger::new(secret).expect("Creating challenge.");
 
         assert_ok!(challenge.encrypt());
@@ -135,7 +135,7 @@ mod tests {
 
     #[test]
     fn can_decrypt_challenge() {
-        let secret = Secret::from("tNuS550e9os25IFZxw518GlNSK3ouiY1".to_string());
+        let secret = SecretString::from("tNuS550e9os25IFZxw518GlNSK3ouiY1");
         let challenge = Base64Challenger::new(secret).expect("Creating challenge.");
         let encrypted = challenge.encrypt().unwrap();
         let decrypted = Base64Challenger::decrypt(&encrypted, challenge.secret).unwrap();
@@ -145,7 +145,7 @@ mod tests {
 
     #[test]
     fn can_verify_correct_answer() {
-        let secret = Secret::from("7LphV05vqV3oxYj831j97H3vs2g5wP89".to_string());
+        let secret = SecretString::from("7LphV05vqV3oxYj831j97H3vs2g5wP89");
         let challenge = Base64Challenger::new(secret).expect("Creating challenge.");
         let encrypted = challenge.encrypt().unwrap();
 
@@ -158,7 +158,7 @@ mod tests {
 
     #[test]
     fn can_reject_incorrect_answer() {
-        let secret = Secret::from("Zh20YpU56L5Ces0VffGl31rb2Km4k7Gr".to_string());
+        let secret = SecretString::from("Zh20YpU56L5Ces0VffGl31rb2Km4k7Gr");
         let challenge = Base64Challenger::new(secret).expect("Creating challenge.");
         let encrypted = challenge.encrypt().unwrap();
 
