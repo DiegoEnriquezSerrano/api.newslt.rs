@@ -3,7 +3,7 @@ use fake::Fake;
 use fake::faker::internet::en::SafeEmail;
 use newsletter_api::models::{NewUser, NewUserData, NewsletterIssueAPI};
 use newsletter_api::utils::{ResponseErrorMessage, ResponseMessage};
-use secrecy::Secret;
+use secrecy::SecretString;
 use std::time::Duration;
 use wiremock::matchers::{any, method, path};
 use wiremock::{Mock, ResponseTemplate};
@@ -263,7 +263,7 @@ async fn newsletters_are_not_delivered_to_anothers_confirmed_subscribers() {
     let second_user: NewUser = NewUserData {
         username: uuid::Uuid::new_v4().to_string(),
         email: SafeEmail().fake(),
-        password: Secret::from(uuid::Uuid::new_v4().to_string()),
+        password: SecretString::from(uuid::Uuid::new_v4().to_string()),
     }
     .try_into()
     .unwrap();

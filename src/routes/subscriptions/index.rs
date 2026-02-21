@@ -6,7 +6,7 @@ use crate::startup::{ApplicationClientBaseUrl, CaptchaSecret};
 use crate::utils::{e400, e404, e500};
 use actix_web::{HttpResponse, post, web};
 use anyhow::Context;
-use secrecy::Secret;
+use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Postgres, Transaction};
 
@@ -22,7 +22,7 @@ pub struct SubscribeParams {
 impl NewSubscriber {
     async fn try_from(
         params: SubscribeParams,
-        captcha_secret: Secret<String>,
+        captcha_secret: SecretString,
         transaction: &mut Transaction<'_, Postgres>,
     ) -> Result<Self, actix_web::Error> {
         let decrypted =

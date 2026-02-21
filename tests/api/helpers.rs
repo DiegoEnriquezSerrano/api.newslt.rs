@@ -9,7 +9,7 @@ use newsletter_api::issue_delivery_worker::{ExecutionOutcome, try_execute_task};
 use newsletter_api::models::{NewUser, NewUserData, UserProfile};
 use newsletter_api::startup::{Application, get_connection_pool};
 use newsletter_api::telemetry::{get_subscriber, init_subscriber};
-use secrecy::Secret;
+use secrecy::SecretString;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::sync::LazyLock;
 use uuid::Uuid;
@@ -39,7 +39,7 @@ pub struct TestApp {
     pub cloudinary_client: CloudinaryClient,
     pub cloudinary_server: MockServer,
     pub email_client: EmailClient,
-    pub captcha_secret: Secret<String>,
+    pub captcha_secret: SecretString,
 }
 
 /// Confirmation links embedded in the request to the email API.
@@ -469,7 +469,7 @@ async fn configure_database(config: &DatabaseSettings) -> PgPool {
     let maintenance_settings = DatabaseSettings {
         database_name: "postgres".to_string(),
         username: "postgres".to_string(),
-        password: Secret::new("password".to_string()),
+        password: SecretString::from("password".to_string()),
         ..config.clone()
     };
     let mut connection = PgConnection::connect_with(&maintenance_settings.connect_options())
@@ -502,7 +502,7 @@ impl TestUser {
         let password: String = Uuid::new_v4().to_string();
         let new_user: NewUser = NewUserData {
             username: Uuid::new_v4().to_string(),
-            password: Secret::from(password.clone()),
+            password: SecretString::from(password.clone()),
             email: SafeEmail().fake(),
         }
         .try_into()

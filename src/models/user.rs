@@ -2,7 +2,7 @@ use crate::domain::user::{Email, Username};
 use anyhow::Context;
 use argon2::password_hash::SaltString;
 use argon2::{Algorithm, Argon2, Params, PasswordHasher, Version};
-use secrecy::{ExposeSecret, Secret};
+use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgRow;
 use sqlx::{Executor, Postgres, Row, Transaction};
@@ -109,7 +109,7 @@ impl NewUser {
 pub struct NewUserData {
     pub email: String,
     pub username: String,
-    pub password: Secret<String>,
+    pub password: SecretString,
 }
 
 fn prepare_new_user(data: NewUserData) -> Result<NewUser, String> {
@@ -139,13 +139,13 @@ fn prepare_new_user(data: NewUserData) -> Result<NewUser, String> {
 mod tests {
     use crate::models::{NewUser, NewUserData};
     use claims::{assert_err, assert_ok};
-    use secrecy::Secret;
+    use secrecy::SecretString;
 
     #[test]
     fn valid_new_user_data_can_convert_into_user() {
         let test_user = NewUserData {
             email: "myguy@example.com".to_string(),
-            password: Secret::new("secretpassword".to_string()),
+            password: SecretString::new("secretpassword".to_string().into()),
             username: "Ursula-Le-Guin".to_string(),
         };
 
@@ -156,7 +156,7 @@ mod tests {
     fn invalid_new_user_data_cannot_convert_into_user() {
         let test_user = NewUserData {
             email: "myguy@example.com".to_string(),
-            password: Secret::new("secretpassword".to_string()),
+            password: SecretString::new("secretpassword".to_string().into()),
             username: "Ursula Le Guin".to_string(),
         };
 

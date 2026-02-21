@@ -5,14 +5,14 @@ use actix_web::error::InternalError;
 use actix_web::http::header::ContentType;
 use actix_web::{HttpResponse, post, web};
 use actix_web_flash_messages::FlashMessage;
-use secrecy::Secret;
+use secrecy::SecretString;
 use serde::Deserialize;
 use sqlx::PgPool;
 
 #[derive(Deserialize, Debug)]
 pub struct LoginParams {
     username: String,
-    password: Secret<String>,
+    password: SecretString,
 }
 
 #[post("/login")]

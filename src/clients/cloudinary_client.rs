@@ -2,7 +2,7 @@ use crate::utils::e500;
 use actix_web::web;
 use anyhow::Context;
 use reqwest::Client;
-use secrecy::{ExposeSecret, Secret};
+use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
 use sha1::{Digest, Sha1};
 use std::fmt::Display;
@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 pub struct CloudinaryClient {
     pub api_key: String,
-    pub api_secret: Secret<String>,
+    pub api_secret: SecretString,
     pub base_url: String,
     pub bucket: String,
     pub http_client: Client,
@@ -21,7 +21,7 @@ pub struct CloudinaryClient {
 impl CloudinaryClient {
     pub fn new(
         api_key: String,
-        api_secret: Secret<String>,
+        api_secret: SecretString,
         base_url: String,
         bucket: String,
         timeout: std::time::Duration,
@@ -235,7 +235,7 @@ mod tests {
     use claims::{assert_err, assert_ok};
     use fake::faker::lorem::en::Word;
     use fake::{Fake, Faker};
-    use secrecy::Secret;
+    use secrecy::SecretString;
     use wiremock::matchers::{any, method, path};
     use wiremock::{Mock, MockServer, Request, ResponseTemplate};
 
@@ -284,7 +284,7 @@ mod tests {
     fn cloudinary_client(base_url: String) -> CloudinaryClient {
         CloudinaryClient::new(
             Faker.fake(),
-            Secret::new(Faker.fake()),
+            SecretString::from(Faker.fake::<String>()),
             base_url,
             bucket(),
             std::time::Duration::from_millis(200),

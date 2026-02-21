@@ -2,7 +2,7 @@ use crate::clients::cloudinary_client::CloudinaryClient;
 use crate::clients::s3_client::S3Client;
 use crate::domain::SubscriberEmail;
 use crate::email_client::{EmailClient, EmailServer, deserialize_email_server_from_string};
-use secrecy::{ExposeSecret, Secret};
+use secrecy::{ExposeSecret, SecretString};
 use serde::Deserialize;
 use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::postgres::{PgConnectOptions, PgSslMode};
@@ -16,14 +16,14 @@ pub struct Settings {
     pub email_client: EmailClientSettings,
     pub s3_client: S3ClientSettings,
     pub hosts: HostnameSettings,
-    pub redis_uri: Secret<String>,
+    pub redis_uri: SecretString,
 }
 
 #[derive(Deserialize, Clone)]
 pub struct ApplicationSettings {
     pub base_url: String,
-    pub captcha_secret: Secret<String>,
-    pub hmac_secret: Secret<String>,
+    pub captcha_secret: SecretString,
+    pub hmac_secret: SecretString,
     pub host: String,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
@@ -33,7 +33,7 @@ pub struct ApplicationSettings {
 #[derive(Deserialize, Clone)]
 pub struct CloudinaryClientSettings {
     pub api_key: String,
-    pub api_secret: Secret<String>,
+    pub api_secret: SecretString,
     pub base_url: String,
     pub bucket: String,
     pub id: String,
@@ -77,7 +77,7 @@ impl S3ClientSettings {
 pub struct DatabaseSettings {
     pub database_name: String,
     pub host: String,
-    pub password: Secret<String>,
+    pub password: SecretString,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub require_ssl: bool,
@@ -105,7 +105,7 @@ impl DatabaseSettings {
 pub struct EmailClientSettings {
     pub base_url: String,
     pub sender_email: String,
-    pub authorization_token: Secret<String>,
+    pub authorization_token: SecretString,
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub timeout_milliseconds: u64,
     #[serde(deserialize_with = "deserialize_email_server_from_string")]

@@ -38,7 +38,7 @@ rand = { version = "0.8.5", features = ["std_rng"] }
 regex = "1.11.3"
 rpassword = "7.4"
 rust-s3 = { version = "0.37.0", features = ["tokio"] }
-secrecy = { version = "0.8", features = ["serde"] }
+secrecy = { version = "0.10.3", features = ["serde"] }
 serde = { version = "1.0.226", features = ["derive"] }
 serde_json = "1.0.149"
 serde-aux = "4.7.0"
