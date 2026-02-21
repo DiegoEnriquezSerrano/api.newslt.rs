@@ -65,7 +65,7 @@ version = "0.4.42"
 [dependencies.reqwest]
 default-features = false
 features = ["cookies", "json", "rustls-tls"]
-version = "0.12.25"
+version = "0.12.28"
 
 [dependencies.sqlx]
 default-features = false
