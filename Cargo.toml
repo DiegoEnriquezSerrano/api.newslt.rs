@@ -46,7 +46,7 @@ sha1 = "0.10.6"
 slug = "0.1.6"
 tera = "1.20.1"
 thiserror = "1.0.24"
-tokio = { version = "1.47.1", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.49.0", features = ["macros", "rt-multi-thread"] }
 tracing = "0.1.41"
 tracing-actix-web = "0.7.19"
 tracing-bunyan-formatter = "0.3.10"
