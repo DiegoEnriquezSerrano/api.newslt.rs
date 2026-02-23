@@ -60,7 +60,7 @@ voca_rs = "1.15.2"
 [dependencies.chrono]
 default-features = false
 features = ["clock", "serde"]
-version = "0.4.42"
+version = "0.4.44"
 
 [dependencies.reqwest]
 default-features = false
