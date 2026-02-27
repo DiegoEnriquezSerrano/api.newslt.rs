@@ -85,7 +85,7 @@ version = "0.3.20"
 
 [dev-dependencies]
 claims = "0.8.0"
-fake = "2.9"
+fake = "4.4"
 linkify = "0.10.0"
 quickcheck = "1.1.0"
 quickcheck_macros = "1.2.0"
