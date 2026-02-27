@@ -1,6 +1,6 @@
 # Rust Newsletter API
 
-[![Rust](https://github.com/DiegoEnriquezSerrano/api.newslt.rs/actions/workflows/general.yml/badge.svg)](https://github.com/DiegoEnriquezSerrano/api.newslt.rs/actions/workflows/general.yml)
+[![Rust](https://github.com/DiegoEnriquezSerrano/api.newslt.rs/actions/workflows/general.yml/badge.svg)](https://github.com/DiegoEnriquezSerrano/api.newslt.rs/actions/workflows/general.yml) [![Security audit](https://github.com/DiegoEnriquezSerrano/api.newslt.rs/actions/workflows/audit.yml/badge.svg)](https://github.com/DiegoEnriquezSerrano/api.newslt.rs/actions/workflows/audit.yml)
 
 ## Description
 
