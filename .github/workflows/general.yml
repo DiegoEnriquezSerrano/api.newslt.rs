@@ -41,7 +41,7 @@ jobs:
       valkey:
         env:
           VALKEY_EXTRA_FLAGS: "--port 63791 --save 60 1 --loglevel debug"
-        image: valkey/valkey:8.0-alpine
+        image: valkey/valkey:8.1.6-alpine
         ports:
           - 63791:63791
       rustfs:
@@ -52,7 +52,7 @@ jobs:
           RUSTFS_CORS_ALLOWED_ORIGINS: "*"
           RUSTFS_REGION: global
           RUSTFS_SECRET_KEY: S3SecretKeyx123456789
-        image: rustfs/rustfs:1.0.0-alpha.76
+        image: rustfs/rustfs:1.0.0-alpha.83
         ports:
           - 9002:9002
     steps:
@@ -134,7 +134,7 @@ jobs:
       valkey:
         env:
           VALKEY_EXTRA_FLAGS: "--port 63791 --save 60 1 --loglevel warning"
-        image: valkey/valkey:8.0-alpine
+        image: valkey/valkey:8.1.6-alpine
         ports:
           - 63791:63791
       rustfs:
@@ -145,7 +145,7 @@ jobs:
           RUSTFS_CORS_ALLOWED_ORIGINS: "*"
           RUSTFS_REGION: global
           RUSTFS_SECRET_KEY: S3SecretKeyx123456789
-        image: rustfs/rustfs:1.0.0-alpha.76
+        image: rustfs/rustfs:1.0.0-alpha.83
         ports:
           - 9002:9002
     steps:

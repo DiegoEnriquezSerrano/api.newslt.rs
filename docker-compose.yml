@@ -12,7 +12,7 @@ services:
       - newsletter-db:/var/lib/postgresql/data
   newsletter-valkey:
     command: valkey-server --save 60 1 --loglevel debug
-    image: valkey/valkey:8.0-alpine
+    image: valkey/valkey:8.1.6-alpine
     env_file: .env
     expose:
       - 6379
@@ -28,7 +28,7 @@ services:
     expose:
       - 9000
       - 9001
-    image: rustfs/rustfs:1.0.0-alpha.76
+    image: rustfs/rustfs:1.0.0-alpha.83
     networks:
       - newsletter-net
     ports:
@@ -42,7 +42,7 @@ services:
     expose:
       - 8025
       - 1025
-    image: axllent/mailpit:v1.28.0
+    image: axllent/mailpit:v1.29.2
     networks:
       - newsletter-net
     ports:
@@ -62,7 +62,7 @@ services:
       - 54321:54321
   newsletter-test-valkey:
     command: valkey-server --port 63791 --save 60 1 --loglevel debug
-    image: valkey/valkey:8.0-alpine
+    image: valkey/valkey:8.1.6-alpine
     env_file: .env.test
     expose:
       - 63791
@@ -76,7 +76,7 @@ services:
     expose:
       - 9002
       - 9003
-    image: rustfs/rustfs:1.0.0-alpha.76
+    image: rustfs/rustfs:1.0.0-alpha.83
     networks:
       - newsletter-test-net
     ports:
