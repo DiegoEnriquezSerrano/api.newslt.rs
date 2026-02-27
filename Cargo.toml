@@ -35,7 +35,7 @@ dotenvy = "0.15.7"
 log = "0.4.29"
 markdown = "1.0.0"
 rand = { version = "0.8.5", features = ["std_rng"] }
-regex = "1.11.3"
+regex = "1.12.3"
 rpassword = "7.4"
 rust-s3 = { version = "0.37.0", features = ["tokio"] }
 secrecy = { version = "0.10.3", features = ["serde"] }
