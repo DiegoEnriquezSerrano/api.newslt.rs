@@ -1,3 +1,7 @@
+> [!WARNING]
+> This repository will become inactive as of May 14, 2026.
+> Future project maintenance will be tracked [here](https://codeberg.org/diegoenriquezserrano/api.newslt.rs)
+
 # Rust Newsletter API
 
 [![Rust](https://github.com/DiegoEnriquezSerrano/api.newslt.rs/actions/workflows/general.yml/badge.svg)](https://github.com/DiegoEnriquezSerrano/api.newslt.rs/actions/workflows/general.yml) [![Security audit](https://github.com/DiegoEnriquezSerrano/api.newslt.rs/actions/workflows/audit.yml/badge.svg)](https://github.com/DiegoEnriquezSerrano/api.newslt.rs/actions/workflows/audit.yml)
