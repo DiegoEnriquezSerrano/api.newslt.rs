@@ -30,7 +30,7 @@ anyhow = "1.0.102"
 argon2 = { version = "0.5.3", features = ["std"] }
 base64 = "0.22.1"
 captcha = "1.0.0"
-config = { version = "0.15.19", default-features = false, features = ["yaml"] }
+config = { version = "0.15.22", default-features = false, features = ["yaml"] }
 dotenvy = "0.15.7"
 log = "0.4.29"
 markdown = "1.0.0"
